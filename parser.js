@@ -11,7 +11,10 @@ const parseDDL = (sql, type) => {
 	sql = sql.replace(/^DROP.+$/mgi, "");
 	sql = sql.replace(/^CREATE DATABASE.+$/mgi, "");
 	sql = sql.replace(/^CREATE VIEW.+$/mgi, "");
+	sql = sql.replace(/^CRATE USER.+$/mgi, "");
+	sql = sql.replace(/^GRANT.+$/mgi, "");
 	sql = sql.replace(/^USE.+$/mgi, "");
+	sql = sql.replace(/ real /mg, " double ");
 
 	parser.feed(sql);
 

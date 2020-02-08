@@ -25,6 +25,10 @@ typeConv = (type) => {
 		case "char":
 		case "tinyint":
 			return "char";
+		case "float":
+		case "double":
+		case "real":
+			return "double";
 		default:
 			console.error(`unknown type '${type.datatype}'`);
 			process.exit(2);

@@ -26,6 +26,7 @@ typeConv = (type) => {
 		case "tinyint":
 			return "char";
 		case "float":
+        case "decimal":
 		case "double":
 		case "real":
 			return "double";

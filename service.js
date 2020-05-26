@@ -1,26 +1,30 @@
 const {nameConv} = require("./utils");
 
 class Service {
-	constructor(name, domain) {
-		this.name = name;
+	constructor(entity, domain) {
 		this.domain = domain;
-		this.className = nameConv(name, true);
+		this.entity = entity;
 	}
 
 	toString() {
-		let varname = nameConv(this.name);
+		const varname = nameConv(this.entity.name);
+		const className = this.entity.className;
+
 		let out = "";
 		out += `package ${this.domain}.service;\n\n`;
-		out += `import ${this.domain}.entity.${this.className};\n`;
+		out += `import ${this.domain}.entity.${className};\n`;
 		out += `import java.util.List;\n\n`;
-		out += `public interface ${this.className}Service {\n\n`;
-		out += `\tList<${this.className}> findAll();\n\n`;
-		out += `\t${this.className} findById(Long id${this.className});\n\n`;
-		out += `\t${this.className} save(${this.className} ${varname});\n\n`;
-		out += `\t${this.className} update(${this.className} ${varname});\n\n`;
-		out += `\tboolean delete(${this.className} ${varname});\n\n`;
-		out += `\tboolean deleteById(Long id${this.className});\n`;
-		out += "}\n";
+		out += `public interface ${className}Service {\n\n`;
+		out += `\tList<${className}> findAll();\n\n`;
+		out += `\tboolean delete(${className} ${varname});\n\n`;
+		out += `\t${className} save(${className} ${varname});\n\n`;
+		out += `\t${className} update(${className} ${varname});\n\n`;
+		out += `\t${this.entity.className} findBy${this.entity.columns.filter(c => c.primaryKey).map(c => `${nameConv(c.name, true)}`).join("And")}(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${nameConv(c.name)}`).join(", ")});\n\n`;
+		out += this.entity.columns.filter(c => !(c.primaryKey && this.entity.primaryKey.columns.length === 1)).map(c => `\tList<${this.entity.className}> findAllBy${nameConv(c.name, true)}(${c.javaType} ${nameConv(c.name)});`).join("\n\n");
+		out += "\n";
+		out += `\t${this.entity.className} deleteBy${this.entity.columns.filter(c => c.primaryKey).map(c => `${nameConv(c.name, true)}`).join("And")}(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${nameConv(c.name)}`).join(", ")});\n\n`;
+		out += this.entity.columns.filter(c => !(c.primaryKey && this.entity.primaryKey.columns.length === 1)).map(c => `\tboolean deleteAllBy${nameConv(c.name, true)}(${c.javaType} ${nameConv(c.name)});`).join("\n\n");
+		out += "\n}\n";
 		return out;
 	}
 }

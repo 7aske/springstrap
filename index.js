@@ -70,13 +70,13 @@ try {
 
 jsonDDL.forEach(ent => {
 	const entity = new Entity(ent, domain);
-	const repository = new Repository(ent.name, domain);
-	const service = new Service(ent.name, domain);
-	const serviceImpl = new ServiceImpl(ent.name, domain);
+	const repository = new Repository(entity, domain);
+	const service = new Service(entity, domain);
+	const serviceImpl = new ServiceImpl(entity, domain);
 	fs.writeFileSync(join(entityDir, entity.className + ".java"), entity.toString());
-	fs.writeFileSync(join(repositoryDir, repository.className + "Repository.java"), repository.toString());
-	fs.writeFileSync(join(serviceDir, service.className + "Service.java"), service.toString());
-	fs.writeFileSync(join(serviceImplDir, serviceImpl.className + "ServiceImpl.java"), serviceImpl.toString());
+	fs.writeFileSync(join(repositoryDir, repository.entity.className + "Repository.java"), repository.toString());
+	fs.writeFileSync(join(serviceDir, service.entity.className + "Service.java"), service.toString());
+	fs.writeFileSync(join(serviceImplDir, serviceImpl.entity.className + "ServiceImpl.java"), serviceImpl.toString());
 	fs.writeFileSync(join(controllerDir, entity.className + "Controller.java"), controllerTemplate(domain, entity));
 });
 if (fs.existsSync(join(configDir, "Config.java")) && program.overwrite) {

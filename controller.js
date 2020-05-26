@@ -1,15 +1,16 @@
+const {nameConv} = require("./utils");
+const {typeConv} = require("./types");
 const controllerTemplate = (domain, entity) => {
 	const className = entity.className;
 	let serviceName = className + "Service";
 	let varServiceName = className.charAt(0).toLowerCase() + className.substring(1) + "Service";
 	let varName = className.charAt(0).toLowerCase() + className.substring(1);
-	const primaryKey = entity.columns.find(c => c.name === entity.primaryKey.columns[0].column);
-	let type;
-	if (primaryKey){
-		type = primaryKey.javaType;
-	} else {
-		type = "Long";
-	}
+
+	const primaryKeys = entity.columns.filter(c => entity.primaryKey.columns.find(c1 => c.name === c1.column)).map(c => ({
+		name: nameConv(c.name),
+		type: typeConv(c.type),
+	}));
+
 	return `
 package ${domain}.controller;
 
@@ -32,10 +33,16 @@ public class ${className}Controller {
 \t\treturn ResponseEntity.ok(${varServiceName}.findAll());
 \t}
 
-\t@GetMapping("/getById/{id${className}}")
-\tpublic ResponseEntity<${className}> getById(@PathVariable ${type} id${className}) {
-\t\treturn ResponseEntity.ok(${varServiceName}.findById(id${className}));
-\t}
+${primaryKeys.length === 1 ?
+`\t@GetMapping("/getById/{id${className}}")
+\tpublic ResponseEntity<${className}> getById(@PathVariable ${primaryKeys[0].type} ${primaryKeys[0].name}) {
+\t\treturn ResponseEntity.ok(${varServiceName}.findBy${nameConv(primaryKeys[0].name, true)}(${primaryKeys[0].name}));
+\t}`
+		:
+`\t@GetMapping("/getById${primaryKeys.map(pk => `/${pk.name}`).join("")}")
+\tpublic ResponseEntity<${className}> getById(${primaryKeys.map(pk => `@PathVariable ${pk.type} ${pk.name}`).join(", ")}) {
+\t\treturn ResponseEntity.ok(${varServiceName}.findById(${primaryKeys.map(pk => `${pk.name}`).join(", ")}));
+\t}`}
 
 
 \t@PostMapping("/save")
@@ -53,11 +60,17 @@ public class ${className}Controller {
 \t\treturn ResponseEntity.ok(${varServiceName}.delete(${varName}));
 \t}
 
-\t@DeleteMapping("/deleteById/{id${className}}")
-\tpublic ResponseEntity<Object> deleteById(@PathVariable ${type} id${className}) {
-\t\treturn ResponseEntity.ok(${varServiceName}.deleteById(id${className}));
-\t}
-}
-`;
+${primaryKeys.length === 1 ?
+`\t@DeleteMapping("/deleteById/{id${className}}")
+\tpublic ResponseEntity<Object> deleteById(@PathVariable ${primaryKeys[0].type} ${primaryKeys[0].name}) {
+\t\treturn ResponseEntity.ok(${varServiceName}.deleteBy${nameConv(primaryKeys[0].name, true)}(${primaryKeys[0].name}));
+\t}`
+		:
+`\t@DeleteMapping("/deleteById${primaryKeys.map(pk => `/${pk.name}`).join("")}")
+\tpublic ResponseEntity<Object> deleteById(${primaryKeys.map(pk => `@PathVariable ${pk.type} ${pk.name}`).join(", ")}) {
+\t\treturn ResponseEntity.ok(${varServiceName}.deleteAllById(${primaryKeys.map(pk => `${pk.name}`).join(", ")}));
+\t}`}
+}\n`;
 };
+
 module.exports = controllerTemplate;

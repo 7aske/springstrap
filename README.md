@@ -6,7 +6,7 @@ Utility program to generate a CRUD Spring application just from a DDL dump of a 
 
 ## Usage
 
-`ss -d com.example.app -o ./output_dir`
+`ss example.ddl -d com.example.app -o ./output_dir`
 
 `npm start` will run the program on the database in example folder.
 
@@ -32,6 +32,9 @@ src
                     │   ├── ...
                     │   └── Repository.java
                     └── service
+                        ├── impl
+                        │   ├── ...
+                        │   └── ServiceImpl.java
                         ├── ...
                         └── Service.java
 ```

@@ -21,6 +21,7 @@ class Entity {
 		out += `import java.time.LocalDate;\n`;
 		out += `import java.util.*;\n\n`;
 		out += "@Entity\n";
+		out += "@Embeddable\n";
 		out += `@Table(name = "${this.name}")\n`;
 		out += `public class ${this.className} {\n`;
 		out += `${this.columns.map(col => col.toString()).join("\n")}\n\n`;

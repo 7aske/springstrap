@@ -43,6 +43,7 @@ const rootDir = program.output ? join(program.output, "src/main/java") : join(pr
 const domain = program.domain;
 const entityDir = join(rootDir, ...domain.split("."), "entity");
 const serviceDir = join(rootDir, ...domain.split("."), "service");
+const serviceImplDir = join(rootDir, ...domain.split("."), "service/impl");
 const controllerDir = join(rootDir, ...domain.split("."), "controller");
 const repositoryDir = join(rootDir, ...domain.split("."), "repository");
 const configDir = join(rootDir, ...domain.split("."), "config");
@@ -58,6 +59,7 @@ try {
 	fs.mkdirSync(repositoryDir, {recursive: true});
 	fs.mkdirSync(controllerDir, {recursive: true});
 	fs.mkdirSync(serviceDir, {recursive: true});
+	fs.mkdirSync(serviceImplDir, {recursive: true});
 	fs.mkdirSync(entityDir, {recursive: true});
 	fs.mkdirSync(configDir, {recursive: true});
 } catch (e) {
@@ -74,8 +76,8 @@ jsonDDL.forEach(ent => {
 	fs.writeFileSync(join(entityDir, entity.className + ".java"), entity.toString());
 	fs.writeFileSync(join(repositoryDir, repository.className + "Repository.java"), repository.toString());
 	fs.writeFileSync(join(serviceDir, service.className + "Service.java"), service.toString());
-	fs.writeFileSync(join(serviceDir, serviceImpl.className + "ServiceImpl.java"), serviceImpl.toString());
-	fs.writeFileSync(join(controllerDir, entity.className + "Controller.java"), controllerTemplate(domain, entity.className));
+	fs.writeFileSync(join(serviceImplDir, serviceImpl.className + "ServiceImpl.java"), serviceImpl.toString());
+	fs.writeFileSync(join(controllerDir, entity.className + "Controller.java"), controllerTemplate(domain, entity));
 });
 if (fs.existsSync(join(configDir, "Config.java")) && program.overwrite) {
 	console.log("Overwriting config file");

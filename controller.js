@@ -1,7 +1,15 @@
-const controllerTemplate = (domain, className) => {
+const controllerTemplate = (domain, entity) => {
+	const className = entity.className;
 	let serviceName = className + "Service";
 	let varServiceName = className.charAt(0).toLowerCase() + className.substring(1) + "Service";
 	let varName = className.charAt(0).toLowerCase() + className.substring(1);
+	const primaryKey = entity.columns.find(c => c.name === entity.primaryKey.columns[0].column);
+	let type;
+	if (primaryKey){
+		type = primaryKey.javaType;
+	} else {
+		type = "Long";
+	}
 	return `
 package ${domain}.controller;
 
@@ -24,8 +32,8 @@ public class ${className}Controller {
 \t\treturn ResponseEntity.ok(${varServiceName}.findAll());
 \t}
 
-\t@GetMapping("/getAllById/{id${className}}")
-\tpublic ResponseEntity<${className}> getById(@PathVariable Long id${className}) {
+\t@GetMapping("/getById/{id${className}}")
+\tpublic ResponseEntity<${className}> getById(@PathVariable ${type} id${className}) {
 \t\treturn ResponseEntity.ok(${varServiceName}.findById(id${className}));
 \t}
 
@@ -46,7 +54,7 @@ public class ${className}Controller {
 \t}
 
 \t@DeleteMapping("/deleteById/{id${className}}")
-\tpublic ResponseEntity<Object> deleteById(@PathVariable Long id${className}) {
+\tpublic ResponseEntity<Object> deleteById(@PathVariable ${type} id${className}) {
 \t\treturn ResponseEntity.ok(${varServiceName}.deleteById(id${className}));
 \t}
 }

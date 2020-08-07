@@ -12,11 +12,12 @@ class ServiceImpl {
 		const domain = this.domain;
 
 		let out = "";
-		out += `package ${domain}.service;\n\n`;
+		out += `package ${domain}.service.impl;\n\n`;
 		out += `import org.springframework.beans.factory.annotation.Autowired;\n`;
 		out += `import org.springframework.stereotype.Service;\n`;
 		out += `import ${domain}.entity.${className};\n`;
 		out += `import ${domain}.repository.${className}Repository;\n`;
+		out += `import ${domain}.service.${className}Service;\n`;
 		out += `import java.util.List;\n\n`;
 		out += `@Service\n`;
 		out += `public class ${className}ServiceImpl implements ${className}Service {\n\n`;

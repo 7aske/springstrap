@@ -39,7 +39,7 @@ ${primaryKeys.length === 1 ?
 \t\treturn ResponseEntity.ok(${varServiceName}.findBy${nameConv(primaryKeys[0].name, true)}(${primaryKeys[0].name}));
 \t}`
 		:
-`\t@GetMapping("/getById${primaryKeys.map(pk => `/${pk.name}`).join("")}")
+`\t@GetMapping("/getById${primaryKeys.map(pk => `/{${pk.name}}`).join("")}")
 \tpublic ResponseEntity<${className}> getById(${primaryKeys.map(pk => `@PathVariable ${pk.type} ${pk.name}`).join(", ")}) {
 \t\treturn ResponseEntity.ok(${varServiceName}.findById(${primaryKeys.map(pk => `${pk.name}`).join(", ")}));
 \t}`}
@@ -66,7 +66,7 @@ ${primaryKeys.length === 1 ?
 \t\treturn ResponseEntity.ok(${varServiceName}.deleteBy${nameConv(primaryKeys[0].name, true)}(${primaryKeys[0].name}));
 \t}`
 		:
-`\t@DeleteMapping("/deleteById${primaryKeys.map(pk => `/${pk.name}`).join("")}")
+`\t@DeleteMapping("/deleteById${primaryKeys.map(pk => `/{${pk.name}}`).join("")}")
 \tpublic ResponseEntity<Object> deleteById(${primaryKeys.map(pk => `@PathVariable ${pk.type} ${pk.name}`).join(", ")}) {
 \t\treturn ResponseEntity.ok(${varServiceName}.deleteAllById(${primaryKeys.map(pk => `${pk.name}`).join(", ")}));
 \t}`}

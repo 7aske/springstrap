@@ -10,7 +10,7 @@ typeConv = (type) => {
 			return "String";
 		case "int":
 		case "mediumint":
-			return "Integer";
+			// return "Integer";
 		case "long":
 		case "bigint":
 			return "Long";

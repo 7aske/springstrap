@@ -1,6 +1,6 @@
 const Parser = require("sql-ddl-to-json-schema");
 
-const parseDDL = (sql, type) => {
+export const parseDDL = (sql: string, type: string): DDLTable[] => {
 	const parser = new Parser(type);
 
 	sql = sql.replace(/^--.*$/mg, "");
@@ -19,7 +19,5 @@ const parseDDL = (sql, type) => {
 	parser.feed(sql);
 
 	const parsedJsonFormat = parser.results;
-
 	return parser.toCompactJson(parsedJsonFormat);
 };
-module.exports = {parseDDL};

@@ -1,12 +1,14 @@
-const {nameConv} = require("./utils");
-const {typeConv} = require("./types");
-const controllerTemplate = (domain, entity) => {
+import Entity from "./entity";
+import { typeConv } from "./types";
+import { nameConv } from "./utils";
+
+const controllerTemplate = (domain:string, entity:Entity) => {
 	const className = entity.className;
 	let serviceName = className + "Service";
 	let varServiceName = className.charAt(0).toLowerCase() + className.substring(1) + "Service";
 	let varName = className.charAt(0).toLowerCase() + className.substring(1);
 
-	const primaryKeys = entity.columns.filter(c => entity.primaryKey.columns.find(c1 => c.name === c1.column)).map(c => ({
+	const primaryKeys = entity.columns.filter(c => (entity.primaryKey.columns as any[]).find(c1 => c.name === c1.column)).map(c => ({
 		name: nameConv(c.name),
 		type: typeConv(c.type),
 	}));
@@ -59,20 +61,39 @@ ${primaryKeys.length === 1 ?
 
 \t@DeleteMapping("/delete")
 \tpublic ResponseEntity<Object> delete(@RequestBody ${className} ${varName}) {
-\t\treturn ResponseEntity.ok(${varServiceName}.delete(${varName}));
+\t\ttry {
+\t\t\t${varServiceName}.delete(${varName});
+\t\t\treturn ResponseEntity.ok(true);
+\t\t} catch (Exception e) {
+\t\t\te.printStackTrace();
+\t\t\treturn ResponseEntity.badRequest().body(false);
+\t\t}
 \t}
 
 ${primaryKeys.length === 1 ?
 `\t@DeleteMapping("/deleteById/{id${className}}")
 \tpublic ResponseEntity<Object> deleteById(@PathVariable ${primaryKeys[0].type} ${primaryKeys[0].name}) {
-\t\treturn ResponseEntity.ok(${varServiceName}.deleteBy${nameConv(primaryKeys[0].name, true)}(${primaryKeys[0].name}));
+\t\ttry {
+\t\t\t${varServiceName}.deleteBy${nameConv(primaryKeys[0].name, true)}(${primaryKeys[0].name});
+\t\t\treturn ResponseEntity.ok(true);
+\t\t} catch (Exception e) {
+\t\t\te.printStackTrace();
+\t\t\treturn ResponseEntity.badRequest().body(false);
+\t\t}
 \t}`
 		:
 `\t@DeleteMapping("/deleteById${primaryKeys.map(pk => `/{${pk.name}}`).join("")}")
 \tpublic ResponseEntity<Object> deleteById(${primaryKeys.map(pk => `@PathVariable ${pk.type} ${pk.name}`).join(", ")}) {
-\t\treturn ResponseEntity.ok(${varServiceName}.deleteAllById(${primaryKeys.map(pk => `${pk.name}`).join(", ")}));
+\t\ttry {
+\t\t\t${varServiceName}.deleteAllById(${primaryKeys.map(pk => `${pk.name}`).join(", ")});
+\t\t\treturn ResponseEntity.ok(true);
+\t\t} catch (Exception e) {
+\t\t\te.printStackTrace();
+\t\t\treturn ResponseEntity.badRequest().body(false);
+\t\t}
 \t}`}
 }\n`;
 };
 
-module.exports = controllerTemplate;
+export default controllerTemplate;
+

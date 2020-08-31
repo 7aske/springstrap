@@ -1,7 +1,11 @@
-const {nameConv} = require("./utils");
+import Entity from "./entity";
+import { nameConv } from "./utils";
 
-class ServiceImpl {
-	constructor(entity, domain) {
+export default class ServiceImpl {
+	domain: string;
+	entity: Entity;
+
+	constructor(entity: Entity, domain: string) {
 		this.domain = domain;
 		this.entity = entity;
 	}
@@ -31,10 +35,10 @@ class ServiceImpl {
 		out += `\t\treturn ${varname}Repository.findAll();\n`;
 		out += "\t}\n\n";
 
-		out += "\t@Override\n";
-		out += `\tpublic ${className} findById${className}(Long id${className}) {\n`;
-		out += `\t\treturn ${varname}Repository.findById(id${className}).orElse(null);\n`;
-		out += "\t}\n\n";
+		// out += "\t@Override\n";
+		// out += `\tpublic ${className} findById(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${c.varname}`).join(", ")}) {\n`;
+		// out += `\t\treturn ${varname}Repository.findBy${this.}(${this.entity.columns.filter(c => c.primaryKey).map(c => c.varname).join(", ")}).orElse(null);\n`;
+		// out += "\t}\n\n";
 
 		out += "\t@Override\n";
 		out += `\tpublic ${className} save(${className} ${varname}) {\n`;
@@ -51,14 +55,28 @@ class ServiceImpl {
 		out += `\t\t${varname}Repository.delete(${varname});\n`;
 		out += "\t}\n\n";
 
-		out += "\t@Override\n";
-		out += `\tpublic void deleteById${className}(Long id${className}) {\n`;
-		out += `\t\t${varname}Repository.deleteById(id${className});\n`;
-		out += "\t}\n\n";
+		this.entity.columns//.filter(c => (c.primaryKey && this.entity.primaryKey.columns.length === 1))
+			.forEach(c => {
+				out += "\t@Override\n";
+				out += `\tpublic ${c.primaryKey ? this.entity.className :`List<${this.entity.className}>`} findBy${nameConv(c.name, true)}(${c.javaType} ${nameConv(c.name)}) {\n`;
+				if (c.primaryKey){
+					out += `\t\treturn ${nameConv(this.entity.name)}Repository.findBy${nameConv(c.name, true)}(${nameConv(c.name)}).orElse(null);\n`;
+				} else {
+
+					out += `\t\treturn ${nameConv(this.entity.name)}Repository.findAllBy${nameConv(c.name, true)}(${nameConv(c.name)});\n`;
+				}
+				out += "\t}\n\n";
+			});
+
+		this.entity.columns//.filter(c => (c.primaryKey && this.entity.primaryKey.columns.length === 1))
+			.forEach(c => {
+				out += "\t@Override\n";
+				out += `\tpublic void deleteBy${nameConv(c.name, true)}(${c.javaType} ${nameConv(c.name)}) {\n`;
+				out += `\t\t${nameConv(this.entity.name)}Repository.deleteAllBy${nameConv(c.name, true)}(${nameConv(c.name)});\n`;
+				out += "\t}\n\n";
+			});
 
 		out += "}\n";
 		return out;
 	}
 }
-
-module.exports = ServiceImpl;

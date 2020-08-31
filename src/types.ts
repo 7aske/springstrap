@@ -1,4 +1,4 @@
-typeConv = (type) => {
+export const typeConv = (type: DDLColumnType) => {
 	switch (type.datatype) {
 		case "text":
 		case "varchar":
@@ -31,8 +31,6 @@ typeConv = (type) => {
 		case "real":
 			return "Double";
 		default:
-			console.error(`unknown type '${type.datatype}'`);
-			process.exit(2);
+			throw `unknown type '${type.datatype}'`;
 	}
 };
-module.exports = {typeConv};

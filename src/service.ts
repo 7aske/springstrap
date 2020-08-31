@@ -1,7 +1,11 @@
-const {nameConv} = require("./utils");
+import Entity from "./entity";
+import { nameConv } from "./utils";
 
-class Service {
-	constructor(entity, domain) {
+
+export default class Service {
+	entity: Entity
+	domain: string;
+	constructor(entity:Entity, domain: string) {
 		this.domain = domain;
 		this.entity = entity;
 	}
@@ -22,13 +26,12 @@ class Service {
 		out += `\t${className} save(${className} ${varname});\n\n`;
 		out += `\t${className} update(${className} ${varname});\n\n`;
 		out += `\t${this.entity.className} findBy${this.entity.columns.filter(c => c.primaryKey).map(c => `${nameConv(c.name, true)}`).join("And")}(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${nameConv(c.name)}`).join(", ")});\n\n`;
-		out += this.entity.columns.filter(c => !(c.primaryKey && this.entity.primaryKey.columns.length === 1)).map(c => `\tList<${this.entity.className}> findAllBy${nameConv(c.name, true)}(${c.javaType} ${nameConv(c.name)});`).join("\n\n");
+		out += this.entity.columns.filter(c => !(c.primaryKey && this.entity.primaryKey.columns.length === 1)).map(c => `\tList<${this.entity.className}> findBy${nameConv(c.name, true)}(${c.javaType} ${nameConv(c.name)});`).join("\n\n");
 		out += "\n";
 		out += `\n\tvoid deleteBy${this.entity.columns.filter(c => c.primaryKey).map(c => `${nameConv(c.name, true)}`).join("And")}(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${nameConv(c.name)}`).join(", ")});\n\n`;
-		out += this.entity.columns.filter(c => !(c.primaryKey && this.entity.primaryKey.columns.length === 1)).map(c => `\tvoid deleteAllBy${nameConv(c.name, true)}(${c.javaType} ${nameConv(c.name)});`).join("\n\n");
+		out += this.entity.columns.filter(c => !(c.primaryKey && this.entity.primaryKey.columns.length === 1)).map(c => `\tvoid deleteBy${nameConv(c.name, true)}(${c.javaType} ${nameConv(c.name)});`).join("\n\n");
 		out += "\n}\n";
 		return out;
 	}
 }
 
-module.exports = Service;

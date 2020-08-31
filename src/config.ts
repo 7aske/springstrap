@@ -1,4 +1,4 @@
-const defaultConfig = (domain)=>`package ${domain}.config;
+export const defaultConfig = (domain: string)=>`package ${domain}.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
@@ -58,5 +58,3 @@ public class Config {
 
 }
 `;
-
-module.exports = {defaultConfig};

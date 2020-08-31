@@ -1,24 +1,27 @@
-const fs = require("fs");
-const {join, dirname} = require("path");
-const program = require("commander");
-const {parseDDL} = require("./parser");
-const Entity = require("./entity");
-const Service = require("./service");
-const ServiceImpl = require("./serviceimpl");
-const Repository = require("./repository");
-const controllerTemplate = require("./controller");
-const {defaultConfig} = require("./config");
+import program from "commander";
+import * as fs from "fs";
+import { join } from "path";
+import { defaultConfig } from "./config";
+import controllerTemplate from "./controller";
+import Entity from "./entity";
+import { parseDDL } from "./parser";
+import Repository from "./repository";
+import Service from "./service";
+import ServiceImpl from "./serviceimpl";
+import { isRelation } from "./utils";
+
 let filename = "";
 program
 	.arguments("<ddl_file.sql>")
-	.action(function (cmd) {
+	.action(function (cmd: string) {
 		filename = cmd;
 	})
 	.option("-t, --type <mariadb|mysql>", "database type")
 	.option("-o, --output <filepath>", "output root path")
 	.option("-d, --domain <domain>", "your app domain (eg. 'com.example.com')")
-	.option("-w, --overwrite", "overwrite default config file");
-program.parse(process.argv);
+	.option("-w, --overwrite", "overwrite default config file")
+	.option("-L, --lombok", "use lombok instead of getters and setters")
+	.parse(process.argv);
 
 if (!fs.existsSync(filename)) {
 	console.error(`ENOENT: no such file or directory, open '${filename}'`);
@@ -69,7 +72,10 @@ try {
 
 
 jsonDDL.forEach(ent => {
-	const entity = new Entity(ent, domain);
+	if (isRelation(ent)){
+		return;
+	}
+	const entity = new Entity(ent, domain, program.lombok);
 	const repository = new Repository(entity, domain);
 	const service = new Service(entity, domain);
 	const serviceImpl = new ServiceImpl(entity, domain);

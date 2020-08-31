@@ -1,8 +1,17 @@
-const {nameConv} = require("./utils");
-const {typeConv} = require("./types");
+import { typeConv } from "./types";
+import { nameConv } from "./utils";
 
-class Column {
-	constructor({name, type, options}, {foreignKey, primaryKey}) {
+export default class Column {
+	name: string;
+	className: string;
+	type: DDLColumnType;
+	options: DDLColumnOptions;
+	primaryKey?: { column: string };
+	foreignKey?: DDLForeignKey;
+	javaType: string;
+	varname: string;
+
+	constructor({name, type, options}: DDLColumn, {foreignKey, primaryKey}: { foreignKey?: DDLForeignKey, primaryKey?: { column: string } }) {
 		this.name = name;
 		this.className = nameConv(name, true);
 		this.type = type;
@@ -35,7 +44,7 @@ class Column {
 		return out;
 	}
 
-	getType(){
+	getType() {
 		if (this.foreignKey) {
 			return nameConv(this.foreignKey.reference.table, true);
 		} else {
@@ -62,4 +71,3 @@ class Column {
 	}
 }
 
-module.exports = Column;

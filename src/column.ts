@@ -30,7 +30,8 @@ export default class Column {
 			out += `\tprivate ${this.javaType} ${this.varname};\n`;
 		} else if (this.primaryKey) {
 			out += "\t@Id\n";
-			out += "\t@GeneratedValue(strategy = GenerationType.IDENTITY)\n";
+			if (this.options.autoincrement)
+				out += "\t@GeneratedValue(strategy = GenerationType.IDENTITY)\n";
 			out += `\t@Column(name = "${this.name}")\n`;
 			out += `\tprivate ${this.javaType} ${this.varname};\n`;
 		} else if (this.foreignKey) {

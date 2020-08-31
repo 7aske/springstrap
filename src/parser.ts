@@ -19,5 +19,5 @@ export const parseDDL = (sql: string, type: string): DDLTable[] => {
 	parser.feed(sql);
 
 	const parsedJsonFormat = parser.results;
-	return parser.toCompactJson(parsedJsonFormat);
+	return parser.toCompactJson(parsedJsonFormat) as DDLTable[];
 };

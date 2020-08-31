@@ -38,7 +38,7 @@ public class ${className}Controller {
 \t}
 
 ${primaryKeys.length === 1 ?
-`\t@GetMapping("/getById/{id${className}}")
+`\t@GetMapping("/getById/{${primaryKeys[0].name}}")
 \tpublic ResponseEntity<${className}> getById(@PathVariable ${primaryKeys[0].type} ${primaryKeys[0].name}) {
 \t\treturn ResponseEntity.ok(${varServiceName}.findBy${nameConv(primaryKeys[0].name, true)}(${primaryKeys[0].name}));
 \t}`
@@ -48,19 +48,28 @@ ${primaryKeys.length === 1 ?
 \t\treturn ResponseEntity.ok(${varServiceName}.findById(${primaryKeys.map(pk => `${pk.name}`).join(", ")}));
 \t}`}
 
-
 \t@PostMapping("/save")
-\tpublic ResponseEntity<${className}> save(@RequestBody ${className} ${varName}) {
-\t\treturn ResponseEntity.ok(${varServiceName}.save(${varName}));
+\tpublic ResponseEntity<Object> save(@RequestBody ${className} ${varName}) {
+\t\ttry {
+\t\t\treturn ResponseEntity.ok(${varServiceName}.save(${varName}));
+\t\t} catch (Exception e) {
+\t\t\te.printStackTrace();
+\t\t\treturn ResponseEntity.badRequest().body(e.getMessage());
+\t\t}
 \t}
 
 \t@PutMapping("/update")
-\tpublic ResponseEntity<${className}> update(@RequestBody ${className} ${varName}) {
-\t\treturn ResponseEntity.ok(${varServiceName}.update(${varName}));
+\tpublic ResponseEntity<Object> update(@RequestBody ${className} ${varName}) {
+\t\ttry {
+\t\t\treturn ResponseEntity.ok(${varServiceName}.update(${varName}));
+\t\t} catch (Exception e) {
+\t\t\te.printStackTrace();
+\t\t\treturn ResponseEntity.badRequest().body(e.getMessage());
+\t\t}
 \t}
 
 \t@DeleteMapping("/delete")
-\tpublic ResponseEntity<Object> delete(@RequestBody ${className} ${varName}) {
+\tpublic ResponseEntity<Boolean> delete(@RequestBody ${className} ${varName}) {
 \t\ttry {
 \t\t\t${varServiceName}.delete(${varName});
 \t\t\treturn ResponseEntity.ok(true);
@@ -72,7 +81,7 @@ ${primaryKeys.length === 1 ?
 
 ${primaryKeys.length === 1 ?
 `\t@DeleteMapping("/deleteById/{id${className}}")
-\tpublic ResponseEntity<Object> deleteById(@PathVariable ${primaryKeys[0].type} ${primaryKeys[0].name}) {
+\tpublic ResponseEntity<Boolean> deleteById(@PathVariable ${primaryKeys[0].type} ${primaryKeys[0].name}) {
 \t\ttry {
 \t\t\t${varServiceName}.deleteBy${nameConv(primaryKeys[0].name, true)}(${primaryKeys[0].name});
 \t\t\treturn ResponseEntity.ok(true);
@@ -83,7 +92,7 @@ ${primaryKeys.length === 1 ?
 \t}`
 		:
 `\t@DeleteMapping("/deleteById${primaryKeys.map(pk => `/{${pk.name}}`).join("")}")
-\tpublic ResponseEntity<Object> deleteById(${primaryKeys.map(pk => `@PathVariable ${pk.type} ${pk.name}`).join(", ")}) {
+\tpublic ResponseEntity<Boolean> deleteById(${primaryKeys.map(pk => `@PathVariable ${pk.type} ${pk.name}`).join(", ")}) {
 \t\ttry {
 \t\t\t${varServiceName}.deleteAllById(${primaryKeys.map(pk => `${pk.name}`).join(", ")});
 \t\t\treturn ResponseEntity.ok(true);

@@ -33,7 +33,6 @@ export default class Entity {
 			out += "import lombok.*;\n\n"
 		}
 		out += "@Entity\n";
-		// out += "@Embeddable\n";
 		out += `@Table(name = "${this.name}")\n`;
 		if (this.useLombok) {
 			out += "@Getter @Setter @NoArgsConstructor\n"
@@ -50,4 +49,3 @@ export default class Entity {
 	}
 }
 
-module.exports = Entity;

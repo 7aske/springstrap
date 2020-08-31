@@ -16,9 +16,11 @@ class ServiceImpl {
 		out += `import org.springframework.beans.factory.annotation.Autowired;\n`;
 		out += `import org.springframework.stereotype.Service;\n`;
 		out += `import ${domain}.entity.${className};\n`;
+		out += `import ${this.domain}.entity.*;\n`;
 		out += `import ${domain}.repository.${className}Repository;\n`;
 		out += `import ${domain}.service.${className}Service;\n`;
-		out += `import java.util.List;\n\n`;
+		out += `import java.util.List;\n`;
+		out += `import java.time.LocalDate;\n\n`;
 		out += `@Service\n`;
 		out += `public class ${className}ServiceImpl implements ${className}Service {\n\n`;
 		out += "\t@Autowired\n";
@@ -30,12 +32,8 @@ class ServiceImpl {
 		out += "\t}\n\n";
 
 		out += "\t@Override\n";
-		out += `\tpublic ${className} findById(Long id${className}) {\n`;
-		out += `\t\tif (${varname}Repository.findById(id${className}).isPresent()) {\n`;
-		out += `\t\t\treturn ${varname}Repository.findById(id${className}).get();\n`;
-		out += `\t\t} else {\n`;
-		out += `\t\t\treturn null;\n`;
-		out += `\t\t}\n`;
+		out += `\tpublic ${className} findById${className}(Long id${className}) {\n`;
+		out += `\t\treturn ${varname}Repository.findById(id${className}).orElse(null);\n`;
 		out += "\t}\n\n";
 
 		out += "\t@Override\n";
@@ -49,15 +47,13 @@ class ServiceImpl {
 		out += "\t}\n\n";
 
 		out += "\t@Override\n";
-		out += `\tpublic boolean delete(${className} ${varname}) {\n`;
+		out += `\tpublic void delete(${className} ${varname}) {\n`;
 		out += `\t\t${varname}Repository.delete(${varname});\n`;
-		out += `\t\treturn !${varname}Repository.findById(${varname}.getId${className}()).isPresent();\n`;
 		out += "\t}\n\n";
 
 		out += "\t@Override\n";
-		out += `\tpublic boolean deleteById(Long id${className}) {\n`;
+		out += `\tpublic void deleteById${className}(Long id${className}) {\n`;
 		out += `\t\t${varname}Repository.deleteById(id${className});\n`;
-		out += `\t\treturn !${varname}Repository.findById(id${className}).isPresent();\n`;
 		out += "\t}\n\n";
 
 		out += "}\n";

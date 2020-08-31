@@ -13,17 +13,19 @@ class Service {
 		let out = "";
 		out += `package ${this.domain}.service;\n\n`;
 		out += `import ${this.domain}.entity.${className};\n`;
-		out += `import java.util.List;\n\n`;
+		out += `import ${this.domain}.entity.*;\n`;
+		out += `import java.util.List;\n`;
+		out += `import java.time.LocalDate;\n\n`;
 		out += `public interface ${className}Service {\n\n`;
 		out += `\tList<${className}> findAll();\n\n`;
-		out += `\tboolean delete(${className} ${varname});\n\n`;
+		out += `\tvoid delete(${className} ${varname});\n\n`;
 		out += `\t${className} save(${className} ${varname});\n\n`;
 		out += `\t${className} update(${className} ${varname});\n\n`;
 		out += `\t${this.entity.className} findBy${this.entity.columns.filter(c => c.primaryKey).map(c => `${nameConv(c.name, true)}`).join("And")}(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${nameConv(c.name)}`).join(", ")});\n\n`;
 		out += this.entity.columns.filter(c => !(c.primaryKey && this.entity.primaryKey.columns.length === 1)).map(c => `\tList<${this.entity.className}> findAllBy${nameConv(c.name, true)}(${c.javaType} ${nameConv(c.name)});`).join("\n\n");
-		out += "\n\n";
-		out += `\tboolean deleteBy${this.entity.columns.filter(c => c.primaryKey).map(c => `${nameConv(c.name, true)}`).join("And")}(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${nameConv(c.name)}`).join(", ")});\n\n`;
-		out += this.entity.columns.filter(c => !(c.primaryKey && this.entity.primaryKey.columns.length === 1)).map(c => `\tboolean deleteAllBy${nameConv(c.name, true)}(${c.javaType} ${nameConv(c.name)});`).join("\n\n");
+		out += "\n";
+		out += `\n\tvoid deleteBy${this.entity.columns.filter(c => c.primaryKey).map(c => `${nameConv(c.name, true)}`).join("And")}(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${nameConv(c.name)}`).join(", ")});\n\n`;
+		out += this.entity.columns.filter(c => !(c.primaryKey && this.entity.primaryKey.columns.length === 1)).map(c => `\tvoid deleteAllBy${nameConv(c.name, true)}(${c.javaType} ${nameConv(c.name)});`).join("\n\n");
 		out += "\n}\n";
 		return out;
 	}

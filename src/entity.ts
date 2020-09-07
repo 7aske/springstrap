@@ -35,10 +35,10 @@ export default class Entity {
 		out += "@Entity\n";
 		out += `@Table(name = "${this.name}")\n`;
 		if (this.useLombok) {
-			out += "@Getter @Setter @NoArgsConstructor\n"
+			out += "@Getter @Setter @NoArgsConstructor @ToString\n"
 		}
 		out += `public class ${this.className} implements Serializable {\n`;
-		out += `${this.columns.map(col => col.toString()).join("\n")}\n\n`;
+		out += `${this.columns.map(col => col.toString()).join("\n")}\n`;
 		if (!this.useLombok) {
 			out += `\tpublic ${this.className}() {}\n`;
 			out += `${this.columns.map(col => col.getter() + col.setter()).join("\n")}`;

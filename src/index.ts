@@ -14,15 +14,16 @@ let filename = "";
 program
 	.arguments("<ddl_file.sql>")
 	.action(function (cmd: string) {
+		console.log(cmd);
 		filename = cmd;
 	})
 	.option("-t, --type <mariadb|mysql>", "database type")
 	.option("-o, --output <filepath>", "output root path")
 	.option("-d, --domain <domain>", "your app domain (eg. 'com.example.com')")
-	.option("-w, --overwrite", "overwrite default config file")
+	.option("-w, --overwrite", "overwrite existing files")
 	.option("-L, --lombok", "use lombok instead of getters and setters")
 	.parse(process.argv);
-
+console.log(filename);
 if (!fs.existsSync(filename)) {
 	console.error(`ENOENT: no such file or directory, open '${filename}'`);
 	process.exit(1);
@@ -72,21 +73,27 @@ try {
 
 
 jsonDDL.forEach(ent => {
-	if (isRelation(ent)){
+	if (isRelation(ent)) {
 		return;
 	}
 	const entity = new Entity(ent, domain, program.lombok);
 	const repository = new Repository(entity, domain);
 	const service = new Service(entity, domain);
 	const serviceImpl = new ServiceImpl(entity, domain);
-	fs.writeFileSync(join(entityDir, entity.className + ".java"), entity.toString());
-	fs.writeFileSync(join(repositoryDir, repository.entity.className + "Repository.java"), repository.toString());
-	fs.writeFileSync(join(serviceDir, service.entity.className + "Service.java"), service.toString());
-	fs.writeFileSync(join(serviceImplDir, serviceImpl.entity.className + "ServiceImpl.java"), serviceImpl.toString());
-	fs.writeFileSync(join(controllerDir, entity.className + "Controller.java"), controllerTemplate(domain, entity));
+	const entityFilename = join(entityDir, entity.className + ".java");
+	const repositoryFilename = join(repositoryDir, repository.entity.className + "Repository.java");
+	const serviceFilename = join(serviceDir, service.entity.className + "Service.java");
+	const serviceImplFilename = join(serviceImplDir, serviceImpl.entity.className + "ServiceImpl.java");
+	const controllerFilename = join(controllerDir, entity.className + "Controller.java");
+	// @formatter:off
+	if (!fs.existsSync(entityFilename)      || program.overwrite) fs.writeFileSync(entityFilename, entity.toString());
+	if (!fs.existsSync(repositoryFilename)  || program.overwrite) fs.writeFileSync(repositoryFilename, repository.toString());
+	if (!fs.existsSync(serviceFilename)     || program.overwrite) fs.writeFileSync(serviceFilename, service.toString());
+	if (!fs.existsSync(serviceImplFilename) || program.overwrite) fs.writeFileSync(serviceImplFilename, serviceImpl.toString());
+	if (!fs.existsSync(controllerFilename)  || program.overwrite) fs.writeFileSync(controllerFilename, controllerTemplate(domain, entity));
+	// @formatter:on
 });
 if (fs.existsSync(join(configDir, "Config.java")) && program.overwrite) {
-	console.log("Overwriting config file");
 	fs.writeFileSync(join(configDir, "Config.java"), defaultConfig(domain));
 } else if (!fs.existsSync(join(configDir, "Config.java"))) {
 	fs.writeFileSync(join(configDir, "Config.java"), defaultConfig(domain));

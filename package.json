@@ -4,8 +4,8 @@
 	"description": "",
 	"main": "src/index.js",
 	"scripts": {
-		"start": "node build/index.js -d com.example.app -o ./test",
-		"build": "tsc && webpack"
+		"build": "tsc && webpack",
+		"build:install": "cp scripts/springstrap.sh ~/.local/bin/springstrap"
 	},
 	"keywords": [],
 	"author": "",

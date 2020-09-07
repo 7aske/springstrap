@@ -27,17 +27,17 @@ export default class Column {
 		if (this.primaryKey && this.foreignKey) {
 			out += "\t@EmbeddedId\n";
 			out += `\t@Column(name = "${this.name}")\n`;
-			out += `\tprivate ${this.javaType} ${this.varname};\n`;
+			out += `\tprivate ${this.javaType} ${this.varname};`;
 		} else if (this.primaryKey) {
 			out += "\t@Id\n";
 			if (this.options.autoincrement)
 				out += "\t@GeneratedValue(strategy = GenerationType.IDENTITY)\n";
 			out += `\t@Column(name = "${this.name}")\n`;
-			out += `\tprivate ${this.javaType} ${this.varname};\n`;
+			out += `\tprivate ${this.javaType} ${this.varname};`;
 		} else if (this.foreignKey) {
 			out += `\t@JoinColumn(name = "${this.name}", referencedColumnName = "${this.foreignKey.reference.columns[0].column}")\n`;
 			out += `\t@ManyToOne\n`;
-			out += `\tprivate ${this.javaType} ${this.varname};\n`;
+			out += `\tprivate ${this.javaType} ${this.varname};`;
 		} else {
 			out += `\t@Column(name = "${this.name}")\n`;
 			out += `\tprivate ${this.javaType} ${this.varname};`;

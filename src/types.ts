@@ -8,24 +8,29 @@ export const typeConv = (type: DDLColumnType) => {
 		case "fulltext":
 		case "char":
 			return "String";
+		case "smallint":
 		case "int":
 		case "mediumint":
-			// return "Integer";
+			if (type.width === 1) {
+				return "boolean"
+			}
+			return "Integer";
 		case "long":
 		case "bigint":
+			if (type.width === 1) {
+				return "boolean"
+			}
 			return "Long";
 		case "date":
+			return "LocalDate"
 		case "datetime":
 		case "timestamp":
-			return "LocalDate";
-		case"bool":
-		case"boolean":
+			return "LocalDateTime";
+		case "bool":
+		case  "boolean":
 		case "tinyint":
 			return "Boolean";
-		case "smallint":
-			return "Short";
 		case "float":
-			return "Float";
 		case "decimal":
 		case "double":
 		case "real":

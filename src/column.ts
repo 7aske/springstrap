@@ -10,8 +10,9 @@ export default class Column {
 	foreignKey?: DDLForeignKey;
 	javaType: string;
 	varname: string;
+	useLombok: boolean;
 
-	constructor({name, type, options}: DDLColumn, {foreignKey, primaryKey}: { foreignKey?: DDLForeignKey, primaryKey?: { column: string } }) {
+	constructor({name, type, options}: DDLColumn, {foreignKey, primaryKey}: { foreignKey?: DDLForeignKey, primaryKey?: { column: string } }, useLombok = false) {
 		this.name = name;
 		this.className = nameConv(name, true);
 		this.type = type;
@@ -20,6 +21,7 @@ export default class Column {
 		this.primaryKey = primaryKey;
 		this.javaType = this.getType();
 		this.varname = nameConv(this.name);
+		this.useLombok = useLombok;
 	}
 
 	toString() {
@@ -32,8 +34,10 @@ export default class Column {
 			out += "\t@Id\n";
 			if (this.options.autoincrement)
 				out += "\t@GeneratedValue(strategy = GenerationType.IDENTITY)\n";
+			if (this.useLombok)
+				out += `\t@EqualsAndHashCode.Include\n`;
 			out += `\t@Column(name = "${this.name}")\n`;
-			out += `\tprivate ${this.javaType} ${this.varname};`;
+			out += `\tprivate ${this.javaType} id;`;
 		} else if (this.foreignKey) {
 			out += `\t@JoinColumn(name = "${this.name}", referencedColumnName = "${this.foreignKey.reference.columns[0].column}")\n`;
 			out += `\t@ManyToOne\n`;
@@ -46,6 +50,7 @@ export default class Column {
 	}
 
 	getType() {
+		console.log(this.type, this.name);
 		if (this.foreignKey) {
 			return nameConv(this.foreignKey.reference.table, true);
 		} else {

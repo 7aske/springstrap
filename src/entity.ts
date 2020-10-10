@@ -9,11 +9,13 @@ export default class Entity {
 	primaryKey: DDLPrimaryKey;
 	foreignKeys?: DDLForeignKey[];
 	columns: Column[];
-	useLombok: boolean;
+	options: SpringStrapOptions;
 
-	constructor({name, columns, primaryKey, foreignKeys}: DDLTable, domain: string, useLombok = false) {
+	constructor({name, columns, primaryKey, foreignKeys}: DDLTable, domain: string,
+	            options: SpringStrapOptions = {extendAuditable: false, useLombok: false} ) {
 		this.domain = domain;
 		this.name = name;
+		this.options = options;
 		this.className = nameConv(name, true);
 		this.primaryKey = primaryKey;
 		this.foreignKeys = foreignKeys;
@@ -22,8 +24,7 @@ export default class Entity {
 			.map(col => new Column(col, {
 				primaryKey: (primaryKey ? primaryKey.columns.find(c => c.column === col.name) : undefined),
 				foreignKey: (foreignKeys ? foreignKeys.find(fk => fk.columns.find(c => c.column === col.name)) : undefined),
-			}, useLombok));
-		this.useLombok = useLombok;
+			}, options.useLombok));
 	}
 
 	toString() {
@@ -33,21 +34,21 @@ export default class Entity {
 		out += `import java.time.*;\n`;
 		out += `import java.io.Serializable;\n`;
 		out += `import java.util.*;\n\n`;
-		if (this.useLombok) {
+		if (this.options.useLombok) {
 			out += "import lombok.*;\n\n";
 			out += "import lombok.experimental.*;\n\n";
 		}
 		out += "@Entity\n";
 		out += `@Table(name = "${this.name}")\n`;
-		if (this.useLombok) {
+		if (this.options.useLombok) {
 			out += "@Data\n";
 			out += "@Accessors(chain = true)\n";
-			out += "@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)\n";
+			out += `@EqualsAndHashCode${this.options.extendAuditable ? "(callSuper = true, onlyExplicitlyIncluded = true)" : ""}\n`;
 			out += "@NoArgsConstructor\n";
 		}
-		out += `public class ${this.className} extends Auditable {\n`;
+		out += `public class ${this.className}${this.options.extendAuditable ? " extends Auditable" : ""} {\n`;
 		out += `${this.columns.map(col => col.toString()).join("\n")}\n`;
-		if (!this.useLombok) {
+		if (!this.options.useLombok) {
 			out += `\tpublic ${this.className}() {}\n`;
 			out += `${this.columns.map(col => col.getter() + col.setter()).join("\n")}`;
 		}

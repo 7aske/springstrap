@@ -20,10 +20,6 @@ export default class Repository {
 		out += `import ${this.domain}.entity.*;\n\n`;
 		out += "@Repository\n";
 		out += `public interface ${this.entity.className}Repository extends JpaRepository<${this.entity.className}, ${this.entity.columns.find(c => c.primaryKey)!.getType()}> {\n`;
-		// out += `\tOptional<${this.entity.className}> findBy${this.entity.className}Id(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${nameConv(c.name)}`).join(", ")});\n`;
-		// out += this.entity.columns.map(c => `\tList<${this.entity.className}> findAllBy${nameConv(c.name, true)}(${c.javaType} ${nameConv(c.name)});`).join("\n");
-		// out += "\n";
-		// out += this.entity.columns.map(c => `\tvoid deleteAllBy${nameConv(c.name, true)}(${c.javaType} ${nameConv(c.name)});`).join("\n");
 		out += "\n}\n";
 		return out;
 	}

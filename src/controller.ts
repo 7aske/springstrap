@@ -1,8 +1,8 @@
 import Entity from "./entity";
 import { typeConv } from "./types";
-import { nameConv } from "./utils";
+import { nameConv, DEFAULT_SSOPT } from "./utils";
 
-const controllerTemplate = (domain: string, entity: Entity) => {
+const controllerTemplate = (domain: string, entity: Entity, options = DEFAULT_SSOPT) => {
 	const className = entity.className;
 	let serviceName = className + "Service";
 	let varServiceName = className.charAt(0).toLowerCase() + className.substring(1) + "Service";
@@ -38,10 +38,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/${endpoint}")
-@RequiredArgsConstructor
+${options.useLombok ? "@RequiredArgsConstructor\n" : ""}
 public class ${className}Controller {
-\tprivate final ${serviceName} ${varServiceName};
-
+${(options.useLombok ?
+	`\tprivate final ${serviceName} ${varServiceName};\n\n`
+	:
+	`\t@Autowired\n\tprivate ${serviceName} ${varServiceName};\n\n`)
+}
 \t@GetMapping
 \tpublic ResponseEntity<List<${className}>> getAll() {
 \t\treturn ResponseEntity.ok(${varServiceName}.findAll());

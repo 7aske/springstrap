@@ -22,14 +22,10 @@ export default class Service {
 		out += `import java.time.LocalDate;\n\n`;
 		out += `public interface ${className}Service {\n\n`;
 		out += `\tList<${className}> findAll();\n\n`;
-		// out += `\tvoid delete(${className} ${varname});\n\n`;
 		out += `\t${className} save(${className} ${varname});\n\n`;
 		out += `\t${className} update(${className} ${varname});\n\n`;
-		out += `\t${this.entity.className} findById(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${nameConv(c.name)}`).join(", ")});\n\n`;
-		// out += this.entity.columns.filter(c => !(c.primaryKey && this.entity.primaryKey.columns.length === 1)).map(c => `\tList<${this.entity.className}> findBy${nameConv(c.name, true)}(${c.javaType} ${nameConv(c.name)});`).join("\n\n");
-		// out += "\n";
-		out += `\n\tvoid deleteById(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${nameConv(c.name)}`).join(", ")});\n\n`;
-		// out += this.entity.columns.filter(c => !(c.primaryKey && this.entity.primaryKey.columns.length === 1)).map(c => `\tvoid deleteBy${nameConv(c.name, true)}(${c.javaType} ${nameConv(c.name)});`).join("\n\n");
+		out += `\t${this.entity.className} findById(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${nameConv(c.name)}`).join(", ")});\n`;
+		out += `\n\tvoid deleteById(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${nameConv(c.name)}`).join(", ")});\n`;
 		out += "\n}\n";
 		return out;
 	}

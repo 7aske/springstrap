@@ -50,7 +50,6 @@ export default class Column {
 	}
 
 	getType() {
-		console.log(this.type, this.name);
 		if (this.foreignKey) {
 			return nameConv(this.foreignKey.reference.table, true);
 		} else {

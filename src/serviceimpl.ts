@@ -1,13 +1,15 @@
 import Entity from "./entity";
-import { nameConv } from "./utils";
+import { nameConv, DEFAULT_SSOPT } from "./utils";
 
 export default class ServiceImpl {
 	domain: string;
 	entity: Entity;
+	options: SpringStrapOptions;
 
-	constructor(entity: Entity, domain: string) {
+	constructor(entity: Entity, domain: string, options: SpringStrapOptions = DEFAULT_SSOPT) {
 		this.domain = domain;
 		this.entity = entity;
+		this.options = options;
 	}
 
 	toString() {
@@ -26,20 +28,21 @@ export default class ServiceImpl {
 		out += `import java.util.List;\n`;
 		out += `import java.time.LocalDate;\n\n`;
 		out += `@Service\n`;
-		out += "@RequiredArgsConstructor\n"
+		if (this.options.useLombok) {
+			out += "@RequiredArgsConstructor\n"
+		}
 		out += `public class ${className}ServiceImpl implements ${className}Service {\n\n`;
-		// out += "\t@Autowired\n";
-		out += `\tprivate final ${className}Repository ${varname}Repository;\n\n`;
+		if (this.options.useLombok) {
+			out += `\tprivate final ${className}Repository ${varname}Repository;\n\n`;
+		} else {
+			out += "\t@Autowired\n";
+			out += `\tprivate ${className}Repository ${varname}Repository;\n\n`;
+		}
 
 		out += "\t@Override\n";
 		out += `\tpublic List<${className}> findAll() {\n`;
 		out += `\t\treturn ${varname}Repository.findAll();\n`;
 		out += "\t}\n\n";
-
-		// out += "\t@Override\n";
-		// out += `\tpublic ${className} findById(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${c.varname}`).join(", ")}) {\n`;
-		// out += `\t\treturn ${varname}Repository.findBy${this.}(${this.entity.columns.filter(c => c.primaryKey).map(c => c.varname).join(", ")}).orElse(null);\n`;
-		// out += "\t}\n\n";
 
 		out += "\t@Override\n";
 		out += `\tpublic ${className} save(${className} ${varname}) {\n`;
@@ -51,13 +54,7 @@ export default class ServiceImpl {
 		out += `\t\treturn ${varname}Repository.save(${varname});\n`;
 		out += "\t}\n\n";
 
-		// out += "\t@Override\n";
-		// out += `\tpublic void delete(${className} ${varname}) {\n`;
-		// out += `\t\t${varname}Repository.delete(${varname});\n`;
-		// out += "\t}\n\n";
-
-		this.entity.columns//.filter(c => (c.primaryKey && this.entity.primaryKey.columns.length === 1))
-			.forEach(c => {
+		this.entity.columns.forEach(c => {
 				if (c.primaryKey) {
 					out += "\t@Override\n";
 					out += `\tpublic ${this.entity.className} findById(${c.javaType} ${nameConv(c.name)}) {\n`;
@@ -66,8 +63,7 @@ export default class ServiceImpl {
 				}
 			});
 
-		this.entity.columns//.filter(c => (c.primaryKey && this.entity.primaryKey.columns.length === 1))
-			.forEach(c => {
+		this.entity.columns .forEach(c => {
 				if (c.primaryKey) {
 					out += "\t@Override\n";
 					out += `\tpublic void deleteById(${c.javaType} ${nameConv(c.name)}) {\n`;

@@ -1,7 +1,6 @@
 import program from "commander";
 import * as fs from "fs";
 import { join } from "path";
-import { defaultConfig } from "./config";
 import controllerTemplate from "./controller";
 import Entity from "./entity";
 import { parseDDL } from "./parser";
@@ -26,9 +25,10 @@ program
 	.option("-I, --serviceimpl", "generate service implementations")
 	.option("-C, --controller", "generate controllers")
 	.option("-R, --repository", "generate repositories")
-	.option("-F, --config", "generate config")
+	.option("-l, --lombok", "use lombok")
+	.option("-a, --auditable", "entities extend 'Auditable' (not provided)")
 	.parse(process.argv);
-console.log(filename);
+
 if (!fs.existsSync(filename)) {
 	console.error(`ENOENT: no such file or directory, open '${filename}'`);
 	process.exit(1);
@@ -76,15 +76,19 @@ try {
 	process.exit(1);
 }
 
-
+const options: SpringStrapOptions = {
+	useLombok: program.lombok,
+	extendAuditable: program.auditable
+}
+console.log(options);
 jsonDDL.forEach(ent => {
 	if (isRelation(ent)) {
 		return;
 	}
-	const entity = new Entity(ent, domain, true);
+	const entity = new Entity(ent, domain, options);
 	const repository = new Repository(entity, domain);
 	const service = new Service(entity, domain);
-	const serviceImpl = new ServiceImpl(entity, domain);
+	const serviceImpl = new ServiceImpl(entity, domain, options);
 	const entityFilename = join(entityDir, entity.className + ".java");
 	const repositoryFilename = join(repositoryDir, repository.entity.className + "Repository.java");
 	const serviceFilename = join(serviceDir, service.entity.className + "Service.java");
@@ -95,11 +99,6 @@ jsonDDL.forEach(ent => {
 	if ((!fs.existsSync(repositoryFilename)  || program.overwrite) &&  program.repository) fs.writeFileSync(repositoryFilename, repository.toString());
 	if ((!fs.existsSync(serviceFilename)     || program.overwrite) &&     program.service) fs.writeFileSync(serviceFilename, service.toString());
 	if ((!fs.existsSync(serviceImplFilename) || program.overwrite) && program.serviceimpl) fs.writeFileSync(serviceImplFilename, serviceImpl.toString());
-	if ((!fs.existsSync(controllerFilename)  || program.overwrite) &&  program.controller) fs.writeFileSync(controllerFilename, controllerTemplate(domain, entity));
+	if ((!fs.existsSync(controllerFilename)  || program.overwrite) &&  program.controller) fs.writeFileSync(controllerFilename, controllerTemplate(domain, entity, options));
 	// @formatter:on
 });
-if (fs.existsSync(join(configDir, "Config.java")) && program.overwrite && program.config) {
-	fs.writeFileSync(join(configDir, "Config.java"), defaultConfig(domain));
-} else if (!fs.existsSync(join(configDir, "Config.java")) && program.config) {
-	fs.writeFileSync(join(configDir, "Config.java"), defaultConfig(domain));
-}

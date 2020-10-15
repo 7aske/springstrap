@@ -9,6 +9,8 @@ import Service from "./service";
 import ServiceImpl from "./serviceimpl";
 import { isRelation } from "./utils";
 
+const PROG="springstrap";
+
 let filename = "";
 program
 	.arguments("<ddl_file.sql>")
@@ -25,26 +27,26 @@ program
 	.option("-I, --serviceimpl", "generate service implementations")
 	.option("-C, --controller", "generate controllers")
 	.option("-R, --repository", "generate repositories")
+	.option("-A, --all", "generate all (combines E,S,I,C,R flags)")
 	.option("-l, --lombok", "use lombok")
 	.option("-a, --auditable", "entities extend 'Auditable' (not provided)")
 	.parse(process.argv);
 
 if (!fs.existsSync(filename)) {
-	console.error(`ENOENT: no such file or directory, open '${filename}'`);
-	process.exit(1);
+	process.stderr.write(`${PROG}: no such file or directory: '${filename}'\n`);
+	program.help();
 }
 
 if (!program.domain) {
-	console.error("EINVAL: must specify a domain");
-	process.exit(1);
+	process.stderr.write(`${PROG}: must specify a domain\n`);
+	program.help();
 }
 
 try {
 	new URL("http://" + program.domain);
 } catch (e) {
-	program.outputHelp();
-	console.error(`EINVAL: invalid domain '${program.domain}'`);
-	process.exit(1);
+	process.stderr.write(`${PROG}: invalid domain: '${program.domain}'\n`);
+	program.help();
 }
 
 
@@ -57,8 +59,8 @@ const controllerDir = join(rootDir, ...domain.split("."), "controller");
 const repositoryDir = join(rootDir, ...domain.split("."), "repository");
 const configDir = join(rootDir, ...domain.split("."), "config");
 
-console.log("root  ", rootDir);
-console.log("domain", domain);
+process.stdout.write("root   " + rootDir + "\n");
+process.stdout.write("domain " + domain + "\n");
 
 const sql = fs.readFileSync(filename).toString();
 const jsonDDL = parseDDL(sql, program.type);
@@ -72,7 +74,7 @@ try {
 	fs.mkdirSync(entityDir, {recursive: true});
 	fs.mkdirSync(configDir, {recursive: true});
 } catch (e) {
-	console.error(e.message);
+	process.stderr.write(e.message + "\n");
 	process.exit(1);
 }
 
@@ -80,11 +82,18 @@ const options: SpringStrapOptions = {
 	useLombok: program.lombok,
 	extendAuditable: program.auditable
 }
-console.log(options);
+
+if (program.all) {
+	program.entity = true;
+	program.repository = true;
+	program.service = true;
+	program.serviceimpl = true;
+	program.controller = true;
+}
+
 jsonDDL.forEach(ent => {
-	if (isRelation(ent)) {
-		return;
-	}
+	if (isRelation(ent)) return;
+
 	const entity = new Entity(ent, domain, options);
 	const repository = new Repository(entity, domain);
 	const service = new Service(entity, domain);

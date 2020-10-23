@@ -7,9 +7,10 @@ import { parseDDL } from "./parser";
 import Repository from "./repository";
 import Service from "./service";
 import ServiceImpl from "./serviceimpl";
-import { isRelation } from "./utils";
+import { isRelation, snakeToCamel } from "./utils";
+import Controller from "./controller";
 
-const PROG="springstrap";
+const PROG = "springstrap";
 
 let filename = "";
 program
@@ -20,7 +21,7 @@ program
 	})
 	.option("-t, --type <mariadb|mysql>", "database type")
 	.option("-o, --output <filepath>", "output root path")
-	.option("-d, --domain <domain>", "your app domain (eg. 'com.example.com')")
+	.option("-d, --domain <domain>", "your app domain (eg. 'com.example.com')", "")
 	.option("-w, --overwrite", "overwrite existing files")
 	.option("-E, --entity", "generate entities")
 	.option("-S, --service", "generate services")
@@ -30,15 +31,11 @@ program
 	.option("-A, --all", "generate all (combines E,S,I,C,R flags)")
 	.option("-l, --lombok", "use lombok")
 	.option("-a, --auditable", "entities extend 'Auditable' (not provided)")
+	.option("--ignore <ignore>", "ignore selected tables", "")
 	.parse(process.argv);
 
 if (!fs.existsSync(filename)) {
 	process.stderr.write(`${PROG}: no such file or directory: '${filename}'\n`);
-	program.help();
-}
-
-if (!program.domain) {
-	process.stderr.write(`${PROG}: must specify a domain\n`);
 	program.help();
 }
 
@@ -66,13 +63,8 @@ const sql = fs.readFileSync(filename).toString();
 const jsonDDL = parseDDL(sql, program.type);
 
 try {
-	fs.mkdirSync(rootDir, {recursive: true});
-	fs.mkdirSync(repositoryDir, {recursive: true});
-	fs.mkdirSync(controllerDir, {recursive: true});
-	fs.mkdirSync(serviceDir, {recursive: true});
-	fs.mkdirSync(serviceImplDir, {recursive: true});
-	fs.mkdirSync(entityDir, {recursive: true});
-	fs.mkdirSync(configDir, {recursive: true});
+	[rootDir, repositoryDir, controllerDir, serviceDir, serviceImplDir, entityDir, configDir]
+		.forEach(dir => fs.mkdirSync(dir, {recursive: true}));
 } catch (e) {
 	process.stderr.write(e.message + "\n");
 	process.exit(1);
@@ -80,8 +72,8 @@ try {
 
 const options: SpringStrapOptions = {
 	useLombok: program.lombok,
-	extendAuditable: program.auditable
-}
+	extendAuditable: program.auditable,
+};
 
 if (program.all) {
 	program.entity = true;
@@ -91,23 +83,32 @@ if (program.all) {
 	program.controller = true;
 }
 
-jsonDDL.forEach(ent => {
-	if (isRelation(ent)) return;
 
-	const entity = new Entity(ent, domain, options);
+jsonDDL.forEach(tableDef => {
+	const isIgnored = (program.ignore as string).split(",").some(ignore => ignore === tableDef.name)
+	if (isIgnored) return;
+	if (isRelation(tableDef)) {
+		console.log(tableDef)
+		return;
+	}
+	const className = snakeToCamel(tableDef.name, true);
+
+	const entity = new Entity(className, tableDef, domain, options);
 	const repository = new Repository(entity, domain);
 	const service = new Service(entity, domain);
-	const serviceImpl = new ServiceImpl(entity, domain, options);
-	const entityFilename = join(entityDir, entity.className + ".java");
-	const repositoryFilename = join(repositoryDir, repository.entity.className + "Repository.java");
-	const serviceFilename = join(serviceDir, service.entity.className + "Service.java");
-	const serviceImplFilename = join(serviceImplDir, serviceImpl.entity.className + "ServiceImpl.java");
-	const controllerFilename = join(controllerDir, entity.className + "Controller.java");
+	const serviceImpl = new ServiceImpl(service, domain, options);
+	const controller = new Controller(service, domain, options);
+
+	const entityFilename = join(entityDir, className + ".java");
+	const repositoryFilename = join(repositoryDir, className + "Repository.java");
+	const serviceFilename = join(serviceDir, className + "Service.java");
+	const serviceImplFilename = join(serviceImplDir, className + "ServiceImpl.java");
+	const controllerFilename = join(controllerDir, className + "Controller.java");
 	// @formatter:off
-	if ((!fs.existsSync(entityFilename)      || program.overwrite) &&      program.entity) fs.writeFileSync(entityFilename, entity.toString());
-	if ((!fs.existsSync(repositoryFilename)  || program.overwrite) &&  program.repository) fs.writeFileSync(repositoryFilename, repository.toString());
-	if ((!fs.existsSync(serviceFilename)     || program.overwrite) &&     program.service) fs.writeFileSync(serviceFilename, service.toString());
-	if ((!fs.existsSync(serviceImplFilename) || program.overwrite) && program.serviceimpl) fs.writeFileSync(serviceImplFilename, serviceImpl.toString());
-	if ((!fs.existsSync(controllerFilename)  || program.overwrite) &&  program.controller) fs.writeFileSync(controllerFilename, controllerTemplate(domain, entity, options));
+	if ((!fs.existsSync(entityFilename)      || program.overwrite) &&      program.entity) fs.writeFileSync(entityFilename, entity.code);
+	if ((!fs.existsSync(repositoryFilename)  || program.overwrite) &&  program.repository) fs.writeFileSync(repositoryFilename, repository.code);
+	if ((!fs.existsSync(serviceFilename)     || program.overwrite) &&     program.service) fs.writeFileSync(serviceFilename, service.code);
+	if ((!fs.existsSync(serviceImplFilename) || program.overwrite) && program.serviceimpl) fs.writeFileSync(serviceImplFilename, serviceImpl.code);
+	if ((!fs.existsSync(controllerFilename)  || program.overwrite) &&  program.controller) fs.writeFileSync(controllerFilename, controller.code);
 	// @formatter:on
 });

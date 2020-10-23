@@ -1,33 +1,62 @@
 import Entity from "./entity";
-import { nameConv } from "./utils";
+import { snakeToCamel, decapitalize, formatImports } from "./utils";
 
 
 export default class Service {
-	entity: Entity
-	domain: string;
-	constructor(entity:Entity, domain: string) {
-		this.domain = domain;
-		this.entity = entity;
+	private readonly _entity: Entity;
+	private readonly _domain: string;
+
+	constructor(entity: Entity, domain: string) {
+		this._domain = domain;
+		this._entity = entity;
 	}
 
-	toString() {
-		const varname = nameConv(this.entity.name);
-		const className = this.entity.className;
+	public get code(): string {
+		const className = this._entity.className;
+		const varname = decapitalize(className);
+
+		const imports = [
+			`${this._domain}.entity.${className}`,
+			`java.util.List`,
+		];
 
 		let out = "";
-		out += `package ${this.domain}.service;\n\n`;
-		out += `import ${this.domain}.entity.${className};\n`;
-		out += `import ${this.domain}.entity.*;\n`;
-		out += `import java.util.List;\n`;
-		out += `import java.time.LocalDate;\n\n`;
-		out += `public interface ${className}Service {\n\n`;
+		out += `${this.packageName}\n\n`;
+		out += formatImports(imports);
+		out += `public interface ${this.className} {\n\n`;
 		out += `\tList<${className}> findAll();\n\n`;
+
 		out += `\t${className} save(${className} ${varname});\n\n`;
+
 		out += `\t${className} update(${className} ${varname});\n\n`;
-		out += `\t${this.entity.className} findById(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${nameConv(c.name)}`).join(", ")});\n`;
-		out += `\n\tvoid deleteById(${this.entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${nameConv(c.name)}`).join(", ")});\n`;
+
+		out += `\t${className} findById(${this.primaryKeyList.join(", ")});\n`;
+
+		out += `\n\tvoid deleteById(${this.primaryKeyList.join(", ")});\n`;
+
 		out += "\n}\n";
 		return out;
+	}
+
+	public get className(): string {
+		return this._entity.className + "Service";
+	}
+
+	public get packageName(): string {
+		if (!this._domain) return "package service;";
+		return `package ${this._domain}.service;`;
+	}
+
+	private get primaryKeyList() {
+		return this._entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${snakeToCamel(c.name)}`);
+	}
+
+	get entity(): Entity {
+		return this._entity;
+	}
+
+	get domain(): string {
+		return this._domain;
 	}
 }
 

@@ -1,78 +1,95 @@
-import Entity from "./entity";
-import { nameConv, DEFAULT_SSOPT } from "./utils";
+import { snakeToCamel, DEFAULT_SSOPT, formatImports, formatAnnotations } from "./utils";
+import Service from "./service";
 
 export default class ServiceImpl {
-	domain: string;
-	entity: Entity;
-	options: SpringStrapOptions;
+	private readonly _domain: string;
+	private readonly _service: Service;
+	private readonly _options: SpringStrapOptions;
 
-	constructor(entity: Entity, domain: string, options: SpringStrapOptions = DEFAULT_SSOPT) {
-		this.domain = domain;
-		this.entity = entity;
-		this.options = options;
+	constructor(entity: Service, domain: string, options: SpringStrapOptions = DEFAULT_SSOPT) {
+		this._domain = domain;
+		this._service = entity;
+		this._options = options;
 	}
 
-	toString() {
-		const varname = nameConv(this.entity.name);
-		const className = this.entity.className;
-		const domain = this.domain;
+	public get code() {
+		const className = this._service.entity.className;
+		const varName = this._service.entity.varName;
+		const domain = this._domain;
 
-		let out = "";
-		out += `package ${domain}.service.impl;\n\n`;
-		out += `import org.springframework.stereotype.Service;\n`;
-		out += "import lombok.*;\n";
-		out += `import ${this.domain}.entity.*;\n`;
-		out += `import ${domain}.repository.${className}Repository;\n`;
-		out += `import ${domain}.service.${className}Service;\n`;
-		out += `import java.util.NoSuchElementException;\n`;
-		out += `import java.util.List;\n`;
-		out += `import java.time.LocalDate;\n\n`;
-		out += `@Service\n`;
-		if (this.options.useLombok) {
-			out += "@RequiredArgsConstructor\n"
-		}
-		out += `public class ${className}ServiceImpl implements ${className}Service {\n\n`;
-		if (this.options.useLombok) {
-			out += `\tprivate final ${className}Repository ${varname}Repository;\n\n`;
+		const imports = [
+			"org.springframework.stereotype.Service",
+			`lombok.*`,
+			`${domain}.entity.*`,
+			`${domain}.repository.${className}Repository`,
+			`${domain}.service.${className}Service`,
+			"java.util.NoSuchElementException",
+			"java.util.List",
+		];
+		const annotations = [
+			"Service",
+		];
+		const lombokAnnotations = [
+			"RequiredArgsConstructor",
+		];
+		const noLombokAnnotations = [
+			"org.springframework.beans.factory.annotation.Autowired",
+		];
+
+		if (this._options.useLombok) annotations.push(...lombokAnnotations);
+		if (!this._options.useLombok) annotations.push(...noLombokAnnotations);
+
+		let out = `${this.packageName}\n\n`;
+		out += formatImports(imports);
+		out += formatAnnotations(annotations);
+		out += `public class ${this.className} implements ${this._service.className} {\n\n`;
+
+		if (this._options.useLombok) {
+			out += `\tprivate final ${className}Repository ${varName}Repository;\n\n`;
 		} else {
 			out += "\t@Autowired\n";
-			out += `\tprivate ${className}Repository ${varname}Repository;\n\n`;
+			out += `\tprivate ${className}Repository ${varName}Repository;\n\n`;
 		}
 
 		out += "\t@Override\n";
 		out += `\tpublic List<${className}> findAll() {\n`;
-		out += `\t\treturn ${varname}Repository.findAll();\n`;
+		out += `\t\treturn ${varName}Repository.findAll();\n`;
 		out += "\t}\n\n";
 
 		out += "\t@Override\n";
-		out += `\tpublic ${className} save(${className} ${varname}) {\n`;
-		out += `\t\treturn ${varname}Repository.save(${varname});\n`;
+		out += `\tpublic ${className} findById(${this.primaryKeyList.map(c => `${c.javaType} ${snakeToCamel(c.name)}`)}) {\n`;
+		out += `\t\treturn ${snakeToCamel(this._service.entity.tableName)}Repository.findById(${this.primaryKeyList.map(c => snakeToCamel(c.name))})\n\t\t\t\t.orElseThrow(() -> new NoSuchElementException("${this._service.className}.notFound"));\n`;
 		out += "\t}\n\n";
 
 		out += "\t@Override\n";
-		out += `\tpublic ${className} update(${className} ${varname}) {\n`;
-		out += `\t\treturn ${varname}Repository.save(${varname});\n`;
+		out += `\tpublic ${className} save(${className} ${varName}) {\n`;
+		out += `\t\treturn ${varName}Repository.save(${varName});\n`;
 		out += "\t}\n\n";
 
-		this.entity.columns.forEach(c => {
-				if (c.primaryKey) {
-					out += "\t@Override\n";
-					out += `\tpublic ${this.entity.className} findById(${c.javaType} ${nameConv(c.name)}) {\n`;
-					out += `\t\treturn ${nameConv(this.entity.name)}Repository.findById(${nameConv(c.name)}).orElseThrow(() -> new NoSuchElementException("${this.entity.className}.notFound"));\n`;
-					out += "\t}\n\n";
-				}
-			});
+		out += "\t@Override\n";
+		out += `\tpublic ${className} update(${className} ${varName}) {\n`;
+		out += `\t\treturn ${varName}Repository.save(${varName});\n`;
+		out += "\t}\n\n";
 
-		this.entity.columns .forEach(c => {
-				if (c.primaryKey) {
-					out += "\t@Override\n";
-					out += `\tpublic void deleteById(${c.javaType} ${nameConv(c.name)}) {\n`;
-					out += `\t\t${nameConv(this.entity.name)}Repository.deleteById(${nameConv(c.name)});\n`;
-					out += "\t}\n\n";
-				}
-			});
+		out += "\t@Override\n";
+		out += `\tpublic void deleteById(${this.primaryKeyList.map(c => `${c.javaType} ${snakeToCamel(c.name)}`)}) {\n`;
+		out += `\t\t${snakeToCamel(this._service.entity.tableName)}Repository.deleteById(${this.primaryKeyList.map(c => snakeToCamel(c.name))});\n`;
+		out += "\t}\n\n";
 
 		out += "}\n";
 		return out;
+	}
+
+	public get className(): string {
+		return `${this._service.className}Impl`;
+	}
+
+	public get packageName(): string {
+		if (!this._domain) return "package service.impl;";
+		return `package ${this._domain}.service.impl;`;
+	}
+
+	private get primaryKeyList() {
+		return this._service.entity.columns.filter(c => c.primaryKey);
 	}
 }

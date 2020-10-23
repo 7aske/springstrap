@@ -1,27 +1,45 @@
 import Entity from "./entity";
-import { nameConv } from "./utils";
+import { formatImports } from "./utils";
 
 export default class Repository {
-	entity: Entity;
-	domain: string;
-	constructor(entity:Entity, domain: string) {
-		this.domain = domain;
-		this.entity = entity;
+	private readonly _entity: Entity;
+	private readonly _domain: string;
+
+	constructor(entity: Entity, domain: string) {
+		this._domain = domain;
+		this._entity = entity;
 	}
 
-	toString() {
+	public get code(): string {
+		const imports = [
+			"org.springframework.data.jpa.repository.JpaRepository",
+			"org.springframework.stereotype.Repository",
+			`${this._domain}.entity.${this._entity.className}`,
+		];
+
 		let out = "";
-		out += `package ${this.domain}.repository;\n\n`;
-		out += `import org.springframework.data.jpa.repository.JpaRepository;\n`;
-		out += `import org.springframework.stereotype.Repository;\n\n`;
-		out += `import java.time.LocalDate;\n`
-		out += `import java.util.List;\n`
-		out += `import java.util.Optional;\n`
-		out += `import ${this.domain}.entity.*;\n\n`;
+		out += `${this.packageName}\n\n`;
+		out += formatImports(imports);
 		out += "@Repository\n";
-		out += `public interface ${this.entity.className}Repository extends JpaRepository<${this.entity.className}, ${this.entity.columns.find(c => c.primaryKey)!.getType()}> {\n`;
-		out += "\n}\n";
+		out += `public interface ${this._entity.className}Repository extends JpaRepository<${this._entity.className}, ${this.entityPrimaryKeyType}> {}\n`;
 		return out;
+	}
+
+	private get entityPrimaryKeyType(): string {
+		return this._entity.columns.find(c => c.primaryKey)!.javaType;
+	}
+
+	public get packageName(): string {
+		if (!this._domain) return "package repository;";
+		return `package ${this._domain}.repository;`;
+	}
+
+	get entity(): Entity {
+		return this._entity;
+	}
+
+	get domain(): string {
+		return this._domain;
 	}
 }
 

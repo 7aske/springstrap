@@ -1,14 +1,13 @@
 import program from "commander";
 import * as fs from "fs";
 import { join } from "path";
-import controllerTemplate from "./controller";
+import Controller from "./controller";
 import Entity from "./entity";
 import { parseDDL } from "./parser";
 import Repository from "./repository";
 import Service from "./service";
 import ServiceImpl from "./serviceimpl";
 import { isRelation, snakeToCamel } from "./utils";
-import Controller from "./controller";
 
 const PROG = "springstrap";
 
@@ -32,6 +31,7 @@ program
 	.option("-l, --lombok", "use lombok")
 	.option("-a, --auditable", "entities extend 'Auditable' (not provided)")
 	.option("--ignore <ignore>", "ignore selected tables", "")
+	.option("--tables <tables>", "generated only listed tables", "")
 	.parse(process.argv);
 
 if (!fs.existsSync(filename)) {
@@ -54,16 +54,14 @@ const serviceDir = join(rootDir, ...domain.split("."), "service");
 const serviceImplDir = join(rootDir, ...domain.split("."), "service/impl");
 const controllerDir = join(rootDir, ...domain.split("."), "controller");
 const repositoryDir = join(rootDir, ...domain.split("."), "repository");
-const configDir = join(rootDir, ...domain.split("."), "config");
+// const configDir = join(rootDir, ...domain.split("."), "config");
 
 process.stdout.write("root   " + rootDir + "\n");
 process.stdout.write("domain " + domain + "\n");
 
-const sql = fs.readFileSync(filename).toString();
-const jsonDDL = parseDDL(sql, program.type);
 
 try {
-	[rootDir, repositoryDir, controllerDir, serviceDir, serviceImplDir, entityDir, configDir]
+	[rootDir, repositoryDir, controllerDir, serviceDir, serviceImplDir, entityDir]
 		.forEach(dir => fs.mkdirSync(dir, {recursive: true}));
 } catch (e) {
 	process.stderr.write(e.message + "\n");
@@ -83,27 +81,60 @@ if (program.all) {
 	program.controller = true;
 }
 
+const sql = fs.readFileSync(filename).toString();
+let jsonDDL = parseDDL(sql, program.type);
+let relations: DDLManyToMany[] =[];
+jsonDDL.forEach(tableDef => {
+	if (!isRelation(tableDef)) return;
+	if (!tableDef.foreignKeys || tableDef.foreignKeys.length !== 2) return;
+
+	const fk1 = tableDef.foreignKeys[0];
+	const fk2 = tableDef.foreignKeys[1];
+
+	const rel1: DDLManyToMany = {
+		name: tableDef.name,
+		target: fk1.reference.table,
+		source: fk2.reference.table,
+		target_column: fk1.columns[0].column,
+		source_column: fk2.columns[0].column
+	}
+	const rel2: DDLManyToMany = {
+		name: tableDef.name,
+		target: fk2.reference.table,
+		source: fk1.reference.table,
+		target_column: fk2.columns[0].column,
+		source_column: fk1.columns[0].column
+	}
+	relations.push(rel1, rel2);
+});
+
+if (program.tables) {
+	jsonDDL = jsonDDL
+		.filter(tableDef => (program.tables as string)
+			.split(",")
+			.some(param => param === tableDef.name));
+}
+
 
 jsonDDL.forEach(tableDef => {
-	const isIgnored = (program.ignore as string).split(",").some(ignore => ignore === tableDef.name)
+	// TODO: possibly extract as a filter
+	const isIgnored = (program.ignore as string).split(",").some(ignore => ignore === tableDef.name);
 	if (isIgnored) return;
-	if (isRelation(tableDef)) {
-		console.log(tableDef)
-		return;
-	}
-	const className = snakeToCamel(tableDef.name, true);
+	if (isRelation(tableDef)) return;
 
-	const entity = new Entity(className, tableDef, domain, options);
+	const manyToMany = relations.filter(rel => rel.source === tableDef.name);
+
+	const entity = new Entity(tableDef, domain, manyToMany, options);
 	const repository = new Repository(entity, domain);
 	const service = new Service(entity, domain);
 	const serviceImpl = new ServiceImpl(service, domain, options);
 	const controller = new Controller(service, domain, options);
 
-	const entityFilename = join(entityDir, className + ".java");
-	const repositoryFilename = join(repositoryDir, className + "Repository.java");
-	const serviceFilename = join(serviceDir, className + "Service.java");
-	const serviceImplFilename = join(serviceImplDir, className + "ServiceImpl.java");
-	const controllerFilename = join(controllerDir, className + "Controller.java");
+	const entityFilename = join(entityDir, entity.className + ".java");
+	const repositoryFilename = join(repositoryDir, entity.className + "Repository.java");
+	const serviceFilename = join(serviceDir, entity.className + "Service.java");
+	const serviceImplFilename = join(serviceImplDir, entity.className + "ServiceImpl.java");
+	const controllerFilename = join(controllerDir, entity.className + "Controller.java");
 	// @formatter:off
 	if ((!fs.existsSync(entityFilename)      || program.overwrite) &&      program.entity) fs.writeFileSync(entityFilename, entity.code);
 	if ((!fs.existsSync(repositoryFilename)  || program.overwrite) &&  program.repository) fs.writeFileSync(repositoryFilename, repository.code);

@@ -1,7 +1,8 @@
-import { formatImports, decapitalize, formatAnnotations } from "./utils";
+import { formatImports, uncapitalize, formatAnnotations } from "./utils";
 
 const {snakeToCamel} = require("./utils");
 import Column from "./column";
+import MTMColumn from "./mtmcolumn";
 
 export default class Entity {
 	private static ignoredFields = ["last_modified_by", "last_modified_date", "record_status"];
@@ -10,20 +11,20 @@ export default class Entity {
 	private readonly _className: string;
 	private readonly _primaryKey: DDLPrimaryKey;
 	private readonly _columns: Column[];
+	private readonly _mtmColumns: MTMColumn[];
+
 	private readonly _options: SpringStrapOptions;
 
-	constructor(className:string, {name, columns, primaryKey, foreignKeys}: DDLTable, domain: string,
+	constructor({name, columns, primaryKey, foreignKeys}: DDLTable,
+	            domain: string,
+	            mtmRel: DDLManyToMany[],
 	            options: SpringStrapOptions = {extendAuditable: false, useLombok: false}) {
 		this._domain = domain;
 		this._tableName = name;
 		this._options = options;
-		this._className = className;
+		this._className = snakeToCamel(name, true);
 		this._primaryKey = primaryKey;
-
-		foreignKeys?.forEach(k =>{
-			console.log(k);
-		})
-
+		this._mtmColumns = mtmRel.map(rel => new MTMColumn(rel));
 		this._columns = columns
 			.filter(c => !Entity.ignoredFields.some(f => f === c.name))
 			.map(col => new Column(col, {
@@ -38,6 +39,7 @@ export default class Entity {
 			`java.time.*`,
 			`java.io.Serializable`,
 			`java.util.*`,
+			`com.fasterxml.jackson.annotation.JsonIgnore`
 		];
 		const lombokImports = [
 			"lombok.*",
@@ -67,14 +69,15 @@ export default class Entity {
 		out += `public class ${this._className}`;
 		if (superClasses.length > 0) out += " extends " + superClasses.join(", ");
 		if (interfaces.length > 0) out += " implements " + interfaces.join(", ");
-		out += ` {\n`;
+		out += ` {\n\t`;
 
-		out += `${this._columns.map(col => col.toString()).join("\n")}\n`;
+		out += `${this._columns.map(col => `${col.code.split("\n").join("\n\t")}`).join("")}`;
+		out += `${this._mtmColumns.map(col => `${col.code.split("\n").join("\n\t")}`).join("")}`;
 		if (!this._options.useLombok) {
-			out += `\tpublic ${this._className}() {}\n`;
+			out += `\n\tpublic ${this._className}() {}\n`;
 			out += `${this._columns.map(col => col.getter() + col.setter()).join("\n")}`;
 		}
-		out += `}`;
+		out += `\n}`;
 
 		return out;
 	}
@@ -84,31 +87,39 @@ export default class Entity {
 		return `package ${this._domain}.entity;`;
 	}
 
-	get domain(): string {
+	public get domain(): string {
 		return this._domain;
 	}
 
-	get tableName(): string {
+	public get tableName(): string {
 		return this._tableName;
 	}
 
-	get className(): string {
+	public get className(): string {
 		return this._className;
 	}
 
-	get varName(): string {
-		return decapitalize(this._className);
+	public get varName(): string {
+		return uncapitalize(this._className);
 	}
 
-	get primaryKey(): DDLPrimaryKey {
+	public get primaryKey(): DDLPrimaryKey {
 		return this._primaryKey;
 	}
 
-	get columns(): Column[] {
+	public get primaryKeyList() {
+		return this._columns.filter(c => c.primaryKey);
+	}
+
+	public get columns(): Column[] {
 		return this._columns;
 	}
 
-	get options(): SpringStrapOptions {
+	public get mtmColumns(): MTMColumn[] {
+		return this._mtmColumns;
+	}
+
+	public get options(): SpringStrapOptions {
 		return this._options;
 	}
 }

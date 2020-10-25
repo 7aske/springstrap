@@ -14,9 +14,16 @@ export const snakeToCamel = (name: string, toCapitalize = false) => {
 
 export const capitalize = (str: string): string =>
 	str.charAt(0).toUpperCase() + str.substring(1);
-export const decapitalize = (str: string): string =>
+
+export const uncapitalize = (str: string): string =>
 	str.charAt(0).toLowerCase() + str.substring(1);
 
+export const plural = (str: string) => {
+	if (str.endsWith("s")) return str + "es";
+	if (str.endsWith("x")) return str + "es";
+	if (str.endsWith("y")) return str.substring(0, str.length - 1) + "ies";
+	return str + "s";
+};
 
 /**
  * Checks if the provided table's sole purpose is to provide a many-to-many relationship
@@ -41,6 +48,6 @@ export const formatImports = (imports: string[]): string => {
 
 export const formatAnnotations = (annotations: string[]): string => {
 	return `${annotations.map(anno => `@${anno}\n`).join("")}`;
-}
+};
 
 

@@ -1,5 +1,5 @@
 import Entity from "./entity";
-import { snakeToCamel, decapitalize, formatImports } from "./utils";
+import { snakeToCamel, uncapitalize, formatImports, capitalize, plural } from "./utils";
 
 
 export default class Service {
@@ -13,10 +13,11 @@ export default class Service {
 
 	public get code(): string {
 		const className = this._entity.className;
-		const varname = decapitalize(className);
+		const varname = uncapitalize(className);
+		const primaryKeys = this.entity.primaryKeyList;
 
 		const imports = [
-			`${this._domain}.entity.${className}`,
+			`${this._domain}.entity.*`,
 			`java.util.List`,
 		];
 
@@ -33,6 +34,11 @@ export default class Service {
 		out += `\t${className} findById(${this.primaryKeyList.join(", ")});\n`;
 
 		out += `\n\tvoid deleteById(${this.primaryKeyList.join(", ")});\n`;
+
+		this.entity.mtmColumns.forEach(col => {
+			out += `\n\tList<${col.targetClassName}> findAll${plural(col.targetClassName)}By${primaryKeys.map(key => `${capitalize(key.varName)}`).join("And")}(${primaryKeys.map(key => `${key.javaType} ${key.varName}`).join(", ")});\n`;
+			// out += `\n\tList<${col.className}> findAllBy${capitalize(col.targetVarName)}(${""});\n`;
+		});
 
 		out += "\n}\n";
 		return out;

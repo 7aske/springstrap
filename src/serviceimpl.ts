@@ -1,4 +1,12 @@
-import { snakeToCamel, DEFAULT_SSOPT, formatImports, formatAnnotations } from "./utils";
+import {
+	snakeToCamel,
+	DEFAULT_SSOPT,
+	formatImports,
+	formatAnnotations,
+	plural,
+	capitalize,
+	uncapitalize,
+} from "./utils";
 import Service from "./service";
 
 export default class ServiceImpl {
@@ -15,6 +23,7 @@ export default class ServiceImpl {
 	public get code() {
 		const className = this._service.entity.className;
 		const varName = this._service.entity.varName;
+		const primaryKeys = this._service.entity.primaryKeyList;
 		const domain = this._domain;
 
 		const imports = [
@@ -75,6 +84,13 @@ export default class ServiceImpl {
 		out += `\tpublic void deleteById(${this.primaryKeyList.map(c => `${c.javaType} ${snakeToCamel(c.name)}`)}) {\n`;
 		out += `\t\t${snakeToCamel(this._service.entity.tableName)}Repository.deleteById(${this.primaryKeyList.map(c => snakeToCamel(c.name))});\n`;
 		out += "\t}\n\n";
+
+		this._service.entity.mtmColumns.forEach(col => {
+			out += "\t@Override\n";
+			out += `\tpublic List<${col.targetClassName}> findAll${plural(col.targetClassName)}By${primaryKeys.map(key => `${capitalize(key.varName)}`).join("And")}(${primaryKeys.map(key => `${key.javaType} ${key.varName}`).join(", ")}) {\n`;
+			out += `\t\treturn findById(${primaryKeys.map(key => `${key.varName}`).join(", ")}).get${plural(col.targetClassName)}();\n`;
+			out += "\t}\n";
+		});
 
 		out += "}\n";
 		return out;

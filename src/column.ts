@@ -24,27 +24,27 @@ export default class Column {
 		this._varname = snakeToCamel(name);
 	}
 
-	toString() {
+	public get code(): string {
 		let out = "";
 		if (this._primaryKey && this._foreignKey) {
-			out += "\t@EmbeddedId\n";
-			out += `\t@Column(name = "${this._name}")\n`;
-			out += `\tprivate ${this._javaType} ${this._varname};`;
+			out += "@EmbeddedId\n";
+			out += `@Column(name = "${this._name}")\n`;
+			out += `private ${this._javaType} ${this._varname};\n`;
 		} else if (this._primaryKey) {
-			out += "\t@Id\n";
+			out += "@Id\n";
 			if (this.options.autoincrement)
-				out += "\t@GeneratedValue(strategy = GenerationType.IDENTITY)\n";
+				out += "@GeneratedValue(strategy = GenerationType.IDENTITY)\n";
 			if (this.useLombok)
-				out += `\t@EqualsAndHashCode.Include\n`;
-			out += `\t@Column(name = "${this._name}")\n`;
-			out += `\tprivate ${this._javaType} id;`;
+				out += `@EqualsAndHashCode.Include\n`;
+			out += `@Column(name = "${this._name}")\n`;
+			out += `private ${this._javaType} id;\n`;
 		} else if (this._foreignKey) {
-			out += `\t@JoinColumn(name = "${this._name}", referencedColumnName = "${this._foreignKey.reference.columns[0].column}")\n`;
-			out += `\t@ManyToOne\n`;
-			out += `\tprivate ${this._javaType} ${this._varname};`;
+			out += `@JoinColumn(name = "${this._name}", referencedColumnName = "${this._foreignKey.reference.columns[0].column}")\n`;
+			out += `@ManyToOne\n`;
+			out += `private ${this._javaType} ${this._varname};\n`;
 		} else {
-			out += `\t@Column(name = "${this._name}")\n`;
-			out += `\tprivate ${this._javaType} ${this._varname};`;
+			out += `@Column(name = "${this._name}")\n`;
+			out += `private ${this._javaType} ${this._varname};\n`;
 		}
 		return out;
 	}

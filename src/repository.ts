@@ -1,5 +1,5 @@
 import Entity from "./entity";
-import { formatImports } from "./utils";
+import { formatImports, plural, capitalize } from "./utils";
 
 export default class Repository {
 	private readonly _entity: Entity;
@@ -11,6 +11,7 @@ export default class Repository {
 	}
 
 	public get code(): string {
+		const primaryKeys = this._entity.primaryKeyList;
 		const imports = [
 			"org.springframework.data.jpa.repository.JpaRepository",
 			"org.springframework.stereotype.Repository",
@@ -21,7 +22,11 @@ export default class Repository {
 		out += `${this.packageName}\n\n`;
 		out += formatImports(imports);
 		out += "@Repository\n";
-		out += `public interface ${this._entity.className}Repository extends JpaRepository<${this._entity.className}, ${this.entityPrimaryKeyType}> {}\n`;
+		out += `public interface ${this._entity.className}Repository extends JpaRepository<${this._entity.className}, ${this.entityPrimaryKeyType}> {\n`;
+		this._entity.mtmColumns.forEach(col => {
+			// out += `\t\tList<> findAll${plural(col.targetClassName)}By${primaryKeys.map(key => `${capitalize(key.varName)}`).join("And")}(${primaryKeys.map(key => `${key.varName}`).join(", ")}));\n`;
+		})
+		out += "}\n"
 		return out;
 	}
 

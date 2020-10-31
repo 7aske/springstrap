@@ -1,11 +1,11 @@
 export default class AuditorAware {
-	domain: string;
+	private readonly _domain: string;
 	constructor(domain: string) {
-		this.domain = domain;
+		this._domain = domain;
 	}
 
 	public get code() {
-		return `package ${this.domain}.config;
+		return `${this.packageName}
 
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.core.Authentication;
@@ -27,5 +27,14 @@ public class CustomAuditorAware implements AuditorAware<String> {
 		return Optional.of(authentication.getName());
 	}
 }`;
+	}
+
+	public get domain(){
+		return this._domain;
+	}
+
+	public get packageName(): string {
+		if (!this._domain) return "package config;";
+		return `package ${this._domain}.config;`;
 	}
 }

@@ -1,11 +1,11 @@
 export default class Auditable {
-	domain: string;
+	private readonly _domain: string;
 	constructor(domain: string) {
-		this.domain = domain;
+		this._domain = domain;
 	}
 
 	public get code() {
-		return `package ${this.domain}.entity;
+		return `${this.packageName}
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
@@ -34,5 +34,14 @@ public abstract class Auditable implements Serializable {
 	@JsonIgnore
 	private Integer recordStatus = 1;
 }`;
+	}
+
+	public get domain(){
+		return this._domain;
+	}
+
+	public get packageName(): string {
+		if (!this._domain) return "package entity;";
+		return `package ${this._domain}.entity;`;
 	}
 }

@@ -38,6 +38,7 @@ export const isRelation = (table: DDLTable): boolean => {
 export const DEFAULT_SSOPT: SpringStrapOptions = {
 	output: "./",
 	type: "mariadb",
+	domain: "",
 };
 
 export const formatImports = (imports: string[]): string => {

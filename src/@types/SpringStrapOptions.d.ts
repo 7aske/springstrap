@@ -3,7 +3,7 @@ declare interface SpringStrapOptions {
 	auditable?: boolean;
 	type?: "mariadb" | "mysql";
 	output?: string;
-	domain?: string;
+	domain: string;
 	overwrite?: boolean;
 	entity?: boolean;
 	service?: boolean;
@@ -12,4 +12,5 @@ declare interface SpringStrapOptions {
 	repository?: boolean;
 	ignore?: string;
 	tables?: string;
+	swagger?: boolean;
 }

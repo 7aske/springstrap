@@ -51,6 +51,7 @@ export default class Controller {
 		if (this._options.lombok) imports.push(...lombokImports);
 		if (!this._options.lombok) imports.push(...noLombokImports);
 		if (this._options.lombok) annotations.push(...lombokAnnotations);
+		if (this._service.entity.enums.length > 0) imports.push(`${domain ? domain + "." : ""}entity.domain.*`)
 
 		let out = `${this.packageName}\n\n`;
 		out += formatImports(imports);
@@ -103,6 +104,13 @@ export default class Controller {
 			out += `\t}\n\n`;
 
 		});
+
+		this._service.entity.enums.forEach(e => {
+			out += `\t@GetMapping("/${plural(uncapitalize(e.className))}")\n`;
+			out += `\tpublic ResponseEntity<Object[]> get${e.className}() {\n`;
+			out += `\t\treturn ResponseEntity.ok(${e.className}.values());\n`;
+			out += `\t}\n\n`;
+		})
 
 		out += "}\n\n";
 

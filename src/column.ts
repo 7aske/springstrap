@@ -14,14 +14,14 @@ export default class Column {
 
 	constructor({name, type, options}: DDLColumn, {foreignKey, primaryKey}: { foreignKey?: DDLForeignKey, primaryKey?: { column: string } }, useLombok = false) {
 		this._name = name;
-		this._className = snakeToCamel(this._name, true);
+		this._className = snakeToCamel(this._name, true).replace(/Fk$|^Fk/, "");
 		this._type = type;
 		this.options = options;
 		this._foreignKey = foreignKey;
 		this._primaryKey = primaryKey;
 		this._javaType = this.typeConv();
 		this.useLombok = useLombok;
-		this._varname = snakeToCamel(name);
+		this._varname = snakeToCamel(name).replace(/Fk$|^Fk/, "");
 	}
 
 	public get code(): string {

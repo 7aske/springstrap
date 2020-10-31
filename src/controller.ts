@@ -24,8 +24,8 @@ export default class Controller {
 		const primaryKeys = this._service.entity.primaryKeyList;
 
 		const imports = [
-			`${domain}.entity.*`,
-			`${domain}.service.*`,
+			`${domain ? domain + "." : ""}entity.*`,
+			`${domain ? domain + "." : ""}service.*`,
 			"org.springframework.web.bind.annotation.*",
 			`org.springframework.http.ResponseEntity`,
 			`java.util.List`,

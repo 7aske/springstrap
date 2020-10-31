@@ -11,11 +11,12 @@ export default class Repository {
 	}
 
 	public get code(): string {
+		const domain = this._domain;
 		const primaryKeys = this._entity.primaryKeyList;
 		const imports = [
 			"org.springframework.data.jpa.repository.JpaRepository",
 			"org.springframework.stereotype.Repository",
-			`${this._domain}.entity.${this._entity.className}`,
+			`${domain ? domain + "." : ""}entity.${this._entity.className}`,
 		];
 
 		let out = "";

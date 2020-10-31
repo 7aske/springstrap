@@ -3,7 +3,7 @@ import * as fs from "fs";
 import { join } from "path";
 import Controller from "./controller";
 import Entity from "./entity";
-import { parseDDL } from "./parser";
+import { parseDDL, parseEums } from "./parser";
 import Repository from "./repository";
 import Service from "./service";
 import ServiceImpl from "./serviceimpl";
@@ -11,6 +11,7 @@ import { isRelation } from "./utils";
 import Auditable from "./auditable";
 import AuditorAware from "./auditoraware";
 import Swagger from "./swagger";
+import { Enum } from "./enum";
 
 const PROG = "springstrap";
 
@@ -34,13 +35,19 @@ program
 	.option("-l, --lombok", "use lombok")
 	.option("-a, --auditable", "entities extend 'Auditable' (not provided)")
 	.option("-s, --swagger", "add basic Swagger config class")
+	.option("-e, --enums <enumfile>", "load enum definitions from a json file")
 	.option("--ignore <ignore>", "ignore selected tables", "")
 	.option("--tables <tables>", "generated only listed tables", "")
 	.parse(process.argv);
 
 if (!fs.existsSync(filename)) {
 	process.stderr.write(`${PROG}: no such file or directory: '${filename}'\n`);
-	program.help();
+	process.exit(2);
+}
+
+if (program.enums && !fs.existsSync(program.enums)) {
+	process.stderr.write(`${PROG}: no such file or directory: '${filename}'\n`);
+	process.exit(2);
 }
 
 if (program.domain) {
@@ -67,6 +74,7 @@ const options: SpringStrapOptions = {
 	lombok: program.lombok,
 	auditable: program.auditable,
 	swagger: program.swagger,
+	enums: program.enums,
 };
 
 if (program.all) {
@@ -100,6 +108,7 @@ try {
 
 
 const sql = fs.readFileSync(filename).toString();
+const enums = options.enums ? parseEums(options.enums) : [];
 let jsonDDL = parseDDL(sql, program.type);
 let relations: DDLManyToMany[] = [];
 jsonDDL.forEach(tableDef => {
@@ -141,8 +150,10 @@ jsonDDL.forEach(tableDef => {
 	if (isRelation(tableDef)) return;
 
 	const manyToMany = relations.filter(rel => rel.source === tableDef.name);
-
-	const entity = new Entity(tableDef, options.domain, manyToMany, options);
+	const entityEnums = enums
+		.filter(e => e.tables.some(t => t === tableDef.name))
+		.map(e => new Enum(options.domain, e, options))
+	const entity = new Entity(tableDef, options.domain, manyToMany, entityEnums, options);
 	const repository = new Repository(entity, options.domain);
 	const service = new Service(entity, options.domain);
 	const serviceImpl = new ServiceImpl(service, options.domain, options);
@@ -153,6 +164,7 @@ jsonDDL.forEach(tableDef => {
 	const serviceFilename = join(serviceDir, entity.className + "Service.java");
 	const serviceImplFilename = join(serviceImplDir, entity.className + "ServiceImpl.java");
 	const controllerFilename = join(controllerDir, entity.className + "Controller.java");
+
 	// @formatter:off
 	if ((!fs.existsSync(entityFilename)        || options.overwrite) && options.entity)      fs.writeFileSync(entityFilename, entity.code);
 	if ((!fs.existsSync(repositoryFilename)    || options.overwrite) && options.repository)  fs.writeFileSync(repositoryFilename, repository.code);
@@ -173,3 +185,7 @@ if ((!fs.existsSync(auditableFilename)    || options.overwrite) && options.audit
 if ((!fs.existsSync(auditorAwareFilename) || options.overwrite) && options.auditable) fs.writeFileSync(auditorAwareFilename, auditorAware.code);
 if ((!fs.existsSync(swaggerFilename)      || options.overwrite) && options.swagger)   fs.writeFileSync(swaggerFilename, swagger.code);
 // @formatter:on
+enums.map(e => new Enum(options.domain, e, options)).forEach(e => {
+	const enumFilename = join(entityDir, "domain", e.className + ".java");
+	if ((!fs.existsSync(enumFilename) || options.overwrite) && options.entity) fs.writeFileSync(enumFilename, e.code);
+});

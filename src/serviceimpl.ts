@@ -29,9 +29,9 @@ export default class ServiceImpl {
 		const imports = [
 			"org.springframework.stereotype.Service",
 			`lombok.*`,
-			`${domain}.entity.*`,
-			`${domain}.repository.${className}Repository`,
-			`${domain}.service.${className}Service`,
+			`${domain ? domain + "." : ""}entity.*`,
+			`${domain ? domain + "." : ""}repository.${className}Repository`,
+			`${domain ? domain + "." : ""}service.${className}Service`,
 			"java.util.NoSuchElementException",
 			"java.util.List",
 		];

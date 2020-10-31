@@ -1,4 +1,5 @@
 const Parser = require("sql-ddl-to-json-schema");
+const fs = require("fs");
 
 export const parseDDL = (sql: string, type: string): DDLTable[] => {
 	const parser = new Parser(type);
@@ -21,3 +22,7 @@ export const parseDDL = (sql: string, type: string): DDLTable[] => {
 	const parsedJsonFormat = parser.results;
 	return parser.toCompactJson(parsedJsonFormat) as DDLTable[];
 };
+
+export const parseEums = (filepath: string): EnumType[] =>{
+	return JSON.parse(fs.readFileSync(filepath).toString()).enums;
+}

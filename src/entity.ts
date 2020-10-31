@@ -1,8 +1,8 @@
-import { formatImports, uncapitalize, formatAnnotations } from "./utils";
-
-const {snakeToCamel} = require("./utils");
+import { formatImports, uncapitalize, formatAnnotations, DEFAULT_SSOPT } from "./utils";
 import Column from "./column";
 import MTMColumn from "./mtmcolumn";
+
+const {snakeToCamel} = require("./utils");
 
 export default class Entity {
 	private static ignoredFields = ["last_modified_by", "last_modified_date", "record_status"];
@@ -18,7 +18,7 @@ export default class Entity {
 	constructor({name, columns, primaryKey, foreignKeys}: DDLTable,
 	            domain: string,
 	            mtmRel: DDLManyToMany[],
-	            options: SpringStrapOptions = {extendAuditable: false, useLombok: false}) {
+	            options: SpringStrapOptions = DEFAULT_SSOPT) {
 		this._domain = domain;
 		this._tableName = name;
 		this._options = options;
@@ -30,7 +30,7 @@ export default class Entity {
 			.map(col => new Column(col, {
 				primaryKey: (primaryKey ? primaryKey.columns.find(c => c.column === col.name) : undefined),
 				foreignKey: (foreignKeys ? foreignKeys.find(fk => fk.columns.find(c => c.column === col.name)) : undefined),
-			}, options.useLombok));
+			}, options.lombok));
 	}
 
 	public get code() {
@@ -39,7 +39,7 @@ export default class Entity {
 			`java.time.*`,
 			`java.io.Serializable`,
 			`java.util.*`,
-			`com.fasterxml.jackson.annotation.JsonIgnore`
+			`com.fasterxml.jackson.annotation.JsonIgnore`,
 		];
 		const lombokImports = [
 			"lombok.*",
@@ -55,13 +55,17 @@ export default class Entity {
 		];
 		const lombokAnnotations = [
 			"Data",
-			`EqualsAndHashCode${superClasses.length > 0 ? "(callSuper = true, onlyExplicitlyIncluded = true)" : ""}`,
+			`EqualsAndHashCode${superClasses.length > 0 || this._options.auditable ? "(callSuper = false, onlyExplicitlyIncluded = true)" : ""}`,
 			"NoArgsConstructor",
 		];
 
-		if (this._options.useLombok) imports.push(...lombokImports);
-		if (this._options.useLombok) annotations.push(...lombokAnnotations);
-		if (this._options.extendAuditable) superClasses.push("Auditable");
+		if (this._options.lombok) imports.push(...lombokImports);
+		if (this._options.lombok) annotations.push(...lombokAnnotations);
+		if (this._options.auditable) {
+			interfaces.splice(interfaces.indexOf("Serializable"), 1);
+			imports.splice(imports.indexOf("java.io.Serializable"), 1);
+			superClasses.push("Auditable");
+		}
 
 		let out = `${this.packageName}\n\n`;
 		out += formatImports(imports);
@@ -73,7 +77,7 @@ export default class Entity {
 
 		out += `${this._columns.map(col => `${col.code.split("\n").join("\n\t")}`).join("")}`;
 		out += `${this._mtmColumns.map(col => `${col.code.split("\n").join("\n\t")}`).join("")}`;
-		if (!this._options.useLombok) {
+		if (!this._options.lombok) {
 			out += `\n\tpublic ${this._className}() {}\n`;
 			out += `${this._columns.map(col => col.getter() + col.setter()).join("\n")}`;
 		}

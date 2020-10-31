@@ -45,15 +45,15 @@ export default class ServiceImpl {
 			"org.springframework.beans.factory.annotation.Autowired",
 		];
 
-		if (this._options.useLombok) annotations.push(...lombokAnnotations);
-		if (!this._options.useLombok) annotations.push(...noLombokAnnotations);
+		if (this._options.lombok) annotations.push(...lombokAnnotations);
+		if (!this._options.lombok) annotations.push(...noLombokAnnotations);
 
 		let out = `${this.packageName}\n\n`;
 		out += formatImports(imports);
 		out += formatAnnotations(annotations);
 		out += `public class ${this.className} implements ${this._service.className} {\n\n`;
 
-		if (this._options.useLombok) {
+		if (this._options.lombok) {
 			out += `\tprivate final ${className}Repository ${varName}Repository;\n\n`;
 		} else {
 			out += "\t@Autowired\n";

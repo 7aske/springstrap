@@ -7,7 +7,10 @@ import { parseDDL } from "./parser";
 import Repository from "./repository";
 import Service from "./service";
 import ServiceImpl from "./serviceimpl";
-import { isRelation, snakeToCamel } from "./utils";
+import { isRelation } from "./utils";
+import Auditable from "./auditable";
+import AuditorAware from "./auditoraware";
+import getOwnPropertyDescriptor = Reflect.getOwnPropertyDescriptor;
 
 const PROG = "springstrap";
 
@@ -54,7 +57,7 @@ const serviceDir = join(rootDir, ...domain.split("."), "service");
 const serviceImplDir = join(rootDir, ...domain.split("."), "service/impl");
 const controllerDir = join(rootDir, ...domain.split("."), "controller");
 const repositoryDir = join(rootDir, ...domain.split("."), "repository");
-// const configDir = join(rootDir, ...domain.split("."), "config");
+const configDir = join(rootDir, ...domain.split("."), "config");
 
 process.stdout.write("root   " + rootDir + "\n");
 process.stdout.write("domain " + domain + "\n");
@@ -69,21 +72,32 @@ try {
 }
 
 const options: SpringStrapOptions = {
-	useLombok: program.lombok,
-	extendAuditable: program.auditable,
+	controller: program.controller,
+	domain: program.domain,
+	entity: program.entity,
+	ignore: program.ignore,
+	output: program.output,
+	overwrite: program.overwrite,
+	repository: program.repository,
+	service: program.service,
+	serviceimpl: program.serviceimpl,
+	tables: program.tables,
+	type: program.type,
+	lombok: program.lombok,
+	auditable: program.auditable
 };
 
 if (program.all) {
-	program.entity = true;
-	program.repository = true;
-	program.service = true;
-	program.serviceimpl = true;
-	program.controller = true;
+	options.entity = true;
+	options.repository = true;
+	options.service = true;
+	options.serviceimpl = true;
+	options.controller = true;
 }
 
 const sql = fs.readFileSync(filename).toString();
 let jsonDDL = parseDDL(sql, program.type);
-let relations: DDLManyToMany[] =[];
+let relations: DDLManyToMany[] = [];
 jsonDDL.forEach(tableDef => {
 	if (!isRelation(tableDef)) return;
 	if (!tableDef.foreignKeys || tableDef.foreignKeys.length !== 2) return;
@@ -96,21 +110,21 @@ jsonDDL.forEach(tableDef => {
 		target: fk1.reference.table,
 		source: fk2.reference.table,
 		target_column: fk1.columns[0].column,
-		source_column: fk2.columns[0].column
-	}
+		source_column: fk2.columns[0].column,
+	};
 	const rel2: DDLManyToMany = {
 		name: tableDef.name,
 		target: fk2.reference.table,
 		source: fk1.reference.table,
 		target_column: fk2.columns[0].column,
-		source_column: fk1.columns[0].column
-	}
+		source_column: fk1.columns[0].column,
+	};
 	relations.push(rel1, rel2);
 });
 
-if (program.tables) {
+if (options.tables) {
 	jsonDDL = jsonDDL
-		.filter(tableDef => (program.tables as string)
+		.filter(tableDef => (options.tables as string)
 			.split(",")
 			.some(param => param === tableDef.name));
 }
@@ -118,28 +132,34 @@ if (program.tables) {
 
 jsonDDL.forEach(tableDef => {
 	// TODO: possibly extract as a filter
-	const isIgnored = (program.ignore as string).split(",").some(ignore => ignore === tableDef.name);
+	const isIgnored = (options.ignore as string).split(",").some(ignore => ignore === tableDef.name);
 	if (isIgnored) return;
 	if (isRelation(tableDef)) return;
 
 	const manyToMany = relations.filter(rel => rel.source === tableDef.name);
 
 	const entity = new Entity(tableDef, domain, manyToMany, options);
+	const auditable = new Auditable(domain);
+	const auditorAware = new AuditorAware(domain);
 	const repository = new Repository(entity, domain);
 	const service = new Service(entity, domain);
 	const serviceImpl = new ServiceImpl(service, domain, options);
 	const controller = new Controller(service, domain, options);
 
 	const entityFilename = join(entityDir, entity.className + ".java");
+	const auditableFilename = join(entityDir, "Auditable.java");
+	const auditorAwareFilename = join(configDir, "CustomAuditorAware.java");
 	const repositoryFilename = join(repositoryDir, entity.className + "Repository.java");
 	const serviceFilename = join(serviceDir, entity.className + "Service.java");
 	const serviceImplFilename = join(serviceImplDir, entity.className + "ServiceImpl.java");
 	const controllerFilename = join(controllerDir, entity.className + "Controller.java");
 	// @formatter:off
-	if ((!fs.existsSync(entityFilename)      || program.overwrite) &&      program.entity) fs.writeFileSync(entityFilename, entity.code);
-	if ((!fs.existsSync(repositoryFilename)  || program.overwrite) &&  program.repository) fs.writeFileSync(repositoryFilename, repository.code);
-	if ((!fs.existsSync(serviceFilename)     || program.overwrite) &&     program.service) fs.writeFileSync(serviceFilename, service.code);
-	if ((!fs.existsSync(serviceImplFilename) || program.overwrite) && program.serviceimpl) fs.writeFileSync(serviceImplFilename, serviceImpl.code);
-	if ((!fs.existsSync(controllerFilename)  || program.overwrite) &&  program.controller) fs.writeFileSync(controllerFilename, controller.code);
+	if ((!fs.existsSync(entityFilename)        || options.overwrite) &&  options.entity) fs.writeFileSync(entityFilename, entity.code);
+	if ((!fs.existsSync(repositoryFilename)    || options.overwrite) &&  options.repository) fs.writeFileSync(repositoryFilename, repository.code);
+	if ((!fs.existsSync(serviceFilename)       || options.overwrite) &&  options.service) fs.writeFileSync(serviceFilename, service.code);
+	if ((!fs.existsSync(serviceImplFilename)   || options.overwrite) &&  options.serviceimpl) fs.writeFileSync(serviceImplFilename, serviceImpl.code);
+	if ((!fs.existsSync(controllerFilename)    || options.overwrite) &&  options.controller) fs.writeFileSync(controllerFilename, controller.code);
+	if ((!fs.existsSync(auditableFilename)     || options.overwrite) &&  options.auditable) fs.writeFileSync(auditableFilename, auditable.code);
+	if ((!fs.existsSync(auditorAwareFilename)  || options.overwrite) &&  options.auditable) fs.writeFileSync(auditorAwareFilename, auditorAware.code);
 	// @formatter:on
 });

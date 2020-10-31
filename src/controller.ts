@@ -48,9 +48,9 @@ export default class Controller {
 			`${serviceName} ${varServiceName}`
 		];
 
-		if (this._options.useLombok) imports.push(...lombokImports);
-		if (!this._options.useLombok) imports.push(...noLombokImports);
-		if (this._options.useLombok) annotations.push(...lombokAnnotations);
+		if (this._options.lombok) imports.push(...lombokImports);
+		if (!this._options.lombok) imports.push(...noLombokImports);
+		if (this._options.lombok) annotations.push(...lombokAnnotations);
 
 		let out = `${this.packageName}\n\n`;
 		out += formatImports(imports);
@@ -58,7 +58,7 @@ export default class Controller {
 		out += `public class ${this.className} {\n`;
 
 		services.forEach(service => {
-			this._options.useLombok ?
+			this._options.lombok ?
 				out += `\tprivate final ${service};\n\n`
 				:
 				out += `\t@Autowired\n\tprivate ${service};\n\n`;

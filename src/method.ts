@@ -1,3 +1,5 @@
+import Field from "./class/Field";
+
 export const enum FieldVisibility {
 	PRIVATE="private",
 	PROTECTED="protected",

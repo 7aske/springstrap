@@ -1,105 +1,73 @@
-import { formatImports, uncapitalize, formatAnnotations, DEFAULT_SSOPT } from "./utils";
+import { uncapitalize, capitalize } from "./utils";
 import Column from "./column";
 import MTMColumn from "./mtmcolumn";
 import { Enum } from "./enum";
+import JavaClass from "./def/JavaClass";
 
 const {snakeToCamel} = require("./utils");
 
-export default class Entity {
-	private static ignoredFields = ["last_modified_by", "last_modified_date", "record_status"];
-	private readonly _domain: string;
+export default class Entity extends JavaClass {
+	private static AUDIT_FIELDS = ["created_date", "created_by", "last_modified_by", "last_modified_date", "record_status"];
 	private readonly _tableName: string;
 	private readonly _className: string;
-	private readonly _primaryKey: DDLPrimaryKey;
+	private readonly _id: Column;
 	private readonly _columns: Column[];
 	private readonly _mtmColumns: MTMColumn[];
 	private readonly _enums: Enum[];
 
-	private readonly _options: SpringStrapOptions;
-
 	constructor({name, columns, primaryKey, foreignKeys}: DDLTable,
 	            domain: string,
 	            mtmRel: DDLManyToMany[] = [],
-	            enums: Enum[] = [],
-	            options: SpringStrapOptions = DEFAULT_SSOPT) {
-		this._domain = domain;
-		this._enums = enums;
-		this._tableName = name;
-		this._options = options;
-		this._className = snakeToCamel(name, true);
-		this._primaryKey = primaryKey;
-		this._mtmColumns = mtmRel.map(rel => new MTMColumn(rel));
-		this._columns = columns
-			.filter(c => this._enums.every(e => e.column !== c.name))
-			.filter(c => !Entity.ignoredFields.some(f => f === c.name))
-			.map(col => new Column(col, {
-				primaryKey: (primaryKey ? primaryKey.columns.find(c => c.column === col.name) : undefined),
-				foreignKey: (foreignKeys ? foreignKeys.find(fk => fk.columns.find(c => c.column === col.name)) : undefined),
-			}, options.lombok));
-	}
-
-	public get code() {
-		const domain = this._domain;
-		const imports = [
+	            enums: EnumType[] = [],
+	            options?: SpringStrapOptions) {
+		super(domain, "entity", options);
+		super.imports = [
 			`javax.persistence.*`,
 			`java.time.*`,
 			`java.io.Serializable`,
 			`java.util.*`,
 			`com.fasterxml.jackson.annotation.JsonIgnore`,
 		];
-		const lombokImports = [
-			"lombok.*",
-			"lombok.experimental.*",
+		super.annotations = [
+			"Entity",
+			`Table(name = "${name}")`,
 		];
-		const superClasses = [];
-		const interfaces = [
+		super.interfaces = [
 			"Serializable",
 		];
-		const annotations = [
-			"Entity",
-			`Table(name = "${this._tableName}")`,
-		];
-		const lombokAnnotations = [
-			"Data",
-			`EqualsAndHashCode${superClasses.length > 0 || this._options.auditable ? "(callSuper = false, onlyExplicitlyIncluded = true)" : ""}`,
-			"NoArgsConstructor",
-		];
-		if (this._enums.length > 0) imports.push(`${domain ? domain + "." : ""}entity.domain.*`);
-		if (this._options.lombok) imports.push(...lombokImports);
-		if (this._options.lombok) annotations.push(...lombokAnnotations);
-		if (this._options.auditable) {
-			interfaces.splice(interfaces.indexOf("Serializable"), 1);
-			imports.splice(imports.indexOf("java.io.Serializable"), 1);
-			superClasses.push("Auditable");
-		}
+		if (primaryKey.columns.length !== 1) throw new Error("Invalid PRIMARY KEY. Column length must be 1 - got " + primaryKey.columns.length);
 
-		let out = `${this.packageName}\n\n`;
-		out += formatImports(imports);
-		out += formatAnnotations(annotations);
-		out += `public class ${this._className}`;
-		if (superClasses.length > 0) out += " extends " + superClasses.join(", ");
-		if (interfaces.length > 0) out += " implements " + interfaces.join(", ");
-		out += ` {\n\t`;
+		this._tableName = name;
+		this._className = capitalize(snakeToCamel(name));
+		this._enums = enums.map(e => new Enum(domain, e, options));
+		this._mtmColumns = mtmRel.map(rel => new MTMColumn(rel));
+		this._columns = columns
+			.filter(c => enums.every(e => e.column !== c.name))
+			.filter(c => !Entity.AUDIT_FIELDS.some(f => f === c.name))
+			.map(col => new Column(col, {
+				primaryKey: primaryKey.columns.find(c => c.column === col.name),
+				foreignKey: (foreignKeys ?? []).find(fk => fk.columns.find(c => c.column === col.name)),
+			}, this.options.lombok));
 
-		out += `${this._columns.map(col => `${col.code.split("\n").join("\n\t")}`).join("")}`;
-		out += `${this._enums.map(col => `${col.fieldCode.split("\n").join("\n\t")}`).join("")}`;
-		out += `${this._mtmColumns.map(col => `${col.code.split("\n").join("\n\t")}`).join("")}`;
-		if (!this._options.lombok) {
-			out += `\n\tpublic ${this._className}() {}\n`;
-			out += `${this._columns.map(col => col.getter() + col.setter()).join("\n")}`;
-		}
-		out += `\n}`;
-
-		return out;
+		this._id = this._columns.find(c => c.primaryKey)!;
 	}
 
-	public get packageName(): string {
-		if (!this._domain) return "package entity;";
-		return `package ${this._domain}.entity;`;
+	public get code() {
+		const domain = super.domain;
+		if (this._enums.length > 0) this.imports.push(`${domain ? domain + "." : ""}entity.domain.*`);
+		let code = "\t";
+		code += `${this._columns.map(col => `${col.code.split("\n").join("\n\t")}`).join("")}`;
+		code += `${this._enums.map(col => `${col.fieldCode.split("\n").join("\n\t")}`).join("")}`;
+		code += `${this._mtmColumns.map(col => `${col.code.split("\n").join("\n\t")}`).join("")}`;
+		if (!this.options.lombok) {
+			code += `${this._columns.map(col => col.getter() + col.setter()).join("\n")}`;
+		}
+
+		return this.wrap(code);
 	}
 
-	public get domain(): string {
-		return this._domain;
+	get id(): Column {
+		return this._id;
 	}
 
 	public get tableName(): string {
@@ -114,14 +82,6 @@ export default class Entity {
 		return uncapitalize(this._className);
 	}
 
-	public get primaryKey(): DDLPrimaryKey {
-		return this._primaryKey;
-	}
-
-	public get primaryKeyList() {
-		return this._columns.filter(c => c.primaryKey);
-	}
-
 	public get columns(): Column[] {
 		return this._columns;
 	}
@@ -130,11 +90,7 @@ export default class Entity {
 		return this._mtmColumns;
 	}
 
-	public get options(): SpringStrapOptions {
-		return this._options;
-	}
-
-	public get enums(){
+	public get enums() {
 		return this._enums;
 	}
 }

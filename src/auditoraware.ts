@@ -1,11 +1,25 @@
-export default class AuditorAware {
-	private readonly _domain: string;
+import JavaClass from "./def/JavaClass";
+import { uncapitalize } from "./utils";
+
+export default class AuditorAware extends JavaClass {
+	private readonly _className: string;
 	constructor(domain: string) {
-		this._domain = domain;
+		super(domain, "config");
+		this.lombok = false;
+		this.auditable = false;
+		this._className = "CustomAuditorAware";
+	}
+
+	public get className(): string {
+		return this._className;
+	}
+
+	public get varName(): string {
+		return uncapitalize(this._className);
 	}
 
 	public get code() {
-		return `${this.packageName}
+		return `package ${this.package};
 
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.core.Authentication;
@@ -27,14 +41,5 @@ public class CustomAuditorAware implements AuditorAware<String> {
 		return Optional.of(authentication.getName());
 	}
 }`;
-	}
-
-	public get domain(){
-		return this._domain;
-	}
-
-	public get packageName(): string {
-		if (!this._domain) return "package config;";
-		return `package ${this._domain}.config;`;
 	}
 }

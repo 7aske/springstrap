@@ -1,12 +1,26 @@
-export default class Swagger {
-	private readonly _domain: string;
+import JavaClass from "./def/JavaClass";
+import { uncapitalize } from "./utils";
+
+export default class Swagger extends JavaClass {
+	private readonly _className: string;
 
 	constructor(domain: string) {
-		this._domain = domain;
+		super(domain, "config");
+		this.lombok = false;
+		this.auditable = false;
+		this._className = "SwaggerConfig";
+	}
+
+	public get className(): string {
+		return this._className;
+	}
+
+	public get varName(): string {
+		return uncapitalize(this._className);
 	}
 
 	public get code() {
-		return `${this.packageName}
+		return `package ${this.package};
 		
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,14 +44,5 @@ public class SwaggerConfig {
 				.build();
 	}
 }`;
-	}
-
-	public get domain(){
-		return this._domain;
-	}
-
-	public get packageName(): string {
-		if (!this._domain) return "package config;";
-		return `package ${this._domain}.config;`;
 	}
 }

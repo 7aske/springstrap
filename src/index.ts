@@ -12,6 +12,7 @@ import Auditable from "./auditable";
 import AuditorAware from "./auditoraware";
 import Swagger from "./swagger";
 import { Enum } from "./enum";
+import Config from "./config";
 
 const PROG = "springstrap";
 
@@ -33,7 +34,7 @@ program
 	.option("-R, --repository", "generate repositories")
 	.option("-A, --all", "generate all (combines E,S,I,C,R flags)")
 	.option("-l, --lombok", "use lombok")
-	.option("-a, --auditable", "entities extend 'Auditable' (not provided)")
+	.option("-a, --auditable", "entities extend 'Auditable'")
 	.option("-s, --swagger", "add basic Swagger config class")
 	.option("-e, --enums <enumfile>", "load enum definitions from a json file")
 	.option("--ignore <ignore>", "ignore selected tables", "")
@@ -60,21 +61,21 @@ if (program.domain) {
 }
 
 const options: SpringStrapOptions = {
+	auditable: program.auditable,
 	controller: program.controller,
 	domain: program.domain || "",
 	entity: program.entity,
+	enums: program.enums,
 	ignore: program.ignore,
+	lombok: program.lombok,
 	output: program.output,
 	overwrite: program.overwrite,
 	repository: program.repository,
 	service: program.service,
 	serviceimpl: program.serviceimpl,
+	swagger: program.swagger,
 	tables: program.tables,
 	type: program.type,
-	lombok: program.lombok,
-	auditable: program.auditable,
-	swagger: program.swagger,
-	enums: program.enums,
 };
 
 if (program.all) {
@@ -88,6 +89,7 @@ if (program.all) {
 
 const rootDir = program.output ? join(program.output, "src/main/java") : join(process.cwd(), "src/main/java");
 const entityDir = join(rootDir, ...options.domain.split("."), "entity");
+const entityDomainDir = join(rootDir, ...options.domain.split("."), "entity/domain");
 const serviceDir = join(rootDir, ...options.domain.split("."), "service");
 const serviceImplDir = join(rootDir, ...options.domain.split("."), "service/impl");
 const controllerDir = join(rootDir, ...options.domain.split("."), "controller");
@@ -96,15 +98,6 @@ const configDir = join(rootDir, ...options.domain.split("."), "config");
 
 process.stdout.write("root   " + rootDir + "\n");
 process.stdout.write("domain " + options.domain + "\n");
-
-
-try {
-	[rootDir, repositoryDir, controllerDir, serviceDir, serviceImplDir, entityDir]
-		.forEach(dir => fs.mkdirSync(dir, {recursive: true}));
-} catch (e) {
-	process.stderr.write(e.message + "\n");
-	process.exit(1);
-}
 
 
 const sql = fs.readFileSync(filename).toString();
@@ -142,6 +135,20 @@ if (options.tables) {
 			.some(param => param === tableDef.name));
 }
 
+try {
+	const dirs = [rootDir];
+	if (options.entity) dirs.push(entityDir);
+	if (options.repository) dirs.push(repositoryDir);
+	if (options.service) dirs.push(serviceDir);
+	if (options.serviceimpl) dirs.push(serviceImplDir);
+	if (options.controller) dirs.push(controllerDir);
+	if (enums.length > 0) dirs.push(entityDomainDir);
+	if (options.auditable || options.swagger) dirs.push(configDir);
+	dirs.forEach(dir => fs.mkdirSync(dir, {recursive: true}));
+} catch (e) {
+	process.stderr.write(e.message + "\n");
+	process.exit(1);
+}
 
 jsonDDL.forEach(tableDef => {
 	// TODO: possibly extract as a filter
@@ -150,21 +157,19 @@ jsonDDL.forEach(tableDef => {
 	if (isRelation(tableDef)) return;
 
 	const manyToMany = relations.filter(rel => rel.source === tableDef.name);
-	const entityEnums = enums
-		.filter(e => e.tables.some(t => t === tableDef.name))
-		.map(e => new Enum(options.domain, e, options))
+	const entityEnums = enums .filter(e => e.tables.some(t => t === tableDef.name))
+
 	const entity = new Entity(tableDef, options.domain, manyToMany, entityEnums, options);
 	const repository = new Repository(entity, options.domain);
 	const service = new Service(entity, options.domain);
-	const serviceImpl = new ServiceImpl(service, options.domain, options);
+	const serviceImpl = new ServiceImpl(service, repository, options.domain, options);
 	const controller = new Controller(service, options.domain, options);
 
-	const entityFilename = join(entityDir, entity.className + ".java");
-	const repositoryFilename = join(repositoryDir, entity.className + "Repository.java");
-	const serviceFilename = join(serviceDir, entity.className + "Service.java");
-	const serviceImplFilename = join(serviceImplDir, entity.className + "ServiceImpl.java");
+	const entityFilename = join(entityDir, entity.fileName);
+	const repositoryFilename = join(repositoryDir, repository.fileName);
+	const serviceFilename = join(serviceDir, service.fileName);
+	const serviceImplFilename = join(serviceImplDir, serviceImpl.fileName);
 	const controllerFilename = join(controllerDir, entity.className + "Controller.java");
-
 	// @formatter:off
 	if ((!fs.existsSync(entityFilename)        || options.overwrite) && options.entity)      fs.writeFileSync(entityFilename, entity.code);
 	if ((!fs.existsSync(repositoryFilename)    || options.overwrite) && options.repository)  fs.writeFileSync(repositoryFilename, repository.code);
@@ -177,13 +182,16 @@ jsonDDL.forEach(tableDef => {
 const auditable = new Auditable(options.domain);
 const auditorAware = new AuditorAware(options.domain);
 const swagger = new Swagger(options.domain);
-const auditableFilename = join(entityDir, "Auditable.java");
-const auditorAwareFilename = join(configDir, "CustomAuditorAware.java");
-const swaggerFilename = join(configDir, "SwaggerConfig.java");
+const config = new Config(options.domain, options);
+const auditableFilename = join(entityDir, auditable.fileName);
+const auditorAwareFilename = join(configDir, auditorAware.fileName);
+const swaggerFilename = join(configDir, swagger.fileName);
+const configFilename = join(configDir, config.fileName);
 // @formatter:off
 if ((!fs.existsSync(auditableFilename)    || options.overwrite) && options.auditable) fs.writeFileSync(auditableFilename, auditable.code);
 if ((!fs.existsSync(auditorAwareFilename) || options.overwrite) && options.auditable) fs.writeFileSync(auditorAwareFilename, auditorAware.code);
 if ((!fs.existsSync(swaggerFilename)      || options.overwrite) && options.swagger)   fs.writeFileSync(swaggerFilename, swagger.code);
+if ((!fs.existsSync(configFilename)       || options.overwrite) && options.auditable) fs.writeFileSync(configFilename, config.code);
 // @formatter:on
 enums.map(e => new Enum(options.domain, e, options)).forEach(e => {
 	const enumFilename = join(entityDir, "domain", e.className + ".java");

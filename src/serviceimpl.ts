@@ -1,111 +1,102 @@
-import {
-	snakeToCamel,
-	DEFAULT_SSOPT,
-	formatImports,
-	formatAnnotations,
-	plural,
-	capitalize,
-	uncapitalize,
-} from "./utils";
+import { snakeToCamel, DEFAULT_SSOPT, plural, uncapitalize } from "./utils";
 import Service from "./service";
+import JavaClass from "./def/JavaClass";
+import Repository from "./repository";
 
-export default class ServiceImpl {
-	private readonly _domain: string;
+export default class ServiceImpl extends JavaClass {
 	private readonly _service: Service;
-	private readonly _options: SpringStrapOptions;
+	private readonly _repository: Repository;
+	private readonly _className: string;
 
-	constructor(entity: Service, domain: string, options: SpringStrapOptions = DEFAULT_SSOPT) {
-		this._domain = domain;
-		this._service = entity;
-		this._options = options;
-	}
-
-	public get code() {
-		const className = this._service.entity.className;
-		const varName = this._service.entity.varName;
-		const primaryKeys = this._service.entity.primaryKeyList;
-		const domain = this._domain;
-
-		const imports = [
+	constructor(service: Service, repository: Repository, domain: string, options: SpringStrapOptions = DEFAULT_SSOPT) {
+		super(domain, "service.impl", options);
+		super.imports = [
 			"org.springframework.stereotype.Service",
-			`lombok.*`,
-			`${domain ? domain + "." : ""}entity.*`,
-			`${domain ? domain + "." : ""}repository.${className}Repository`,
-			`${domain ? domain + "." : ""}service.${className}Service`,
+			`${service.entity.package}.*`,
+			repository.import,
+			service.import,
 			"java.util.NoSuchElementException",
 			"java.util.List",
 		];
-		const annotations = [
+		super.interfaces = [
+			service.className,
+		];
+		super.annotations = [
 			"Service",
 		];
 		const lombokAnnotations = [
 			"RequiredArgsConstructor",
 		];
-		const noLombokAnnotations = [
+		const noLombokImports = [
 			"org.springframework.beans.factory.annotation.Autowired",
 		];
-
-		if (this._options.lombok) annotations.push(...lombokAnnotations);
-		if (!this._options.lombok) annotations.push(...noLombokAnnotations);
-
-		let out = `${this.packageName}\n\n`;
-		out += formatImports(imports);
-		out += formatAnnotations(annotations);
-		out += `public class ${this.className} implements ${this._service.className} {\n\n`;
-
-		if (this._options.lombok) {
-			out += `\tprivate final ${className}Repository ${varName}Repository;\n\n`;
-		} else {
-			out += "\t@Autowired\n";
-			out += `\tprivate ${className}Repository ${varName}Repository;\n\n`;
-		}
-
-		out += "\t@Override\n";
-		out += `\tpublic List<${className}> findAll() {\n`;
-		out += `\t\treturn ${varName}Repository.findAll();\n`;
-		out += "\t}\n\n";
-
-		out += "\t@Override\n";
-		out += `\tpublic ${className} findById(${this.primaryKeyList.map(c => `${c.javaType} ${snakeToCamel(c.name)}`)}) {\n`;
-		out += `\t\treturn ${snakeToCamel(this._service.entity.tableName)}Repository.findById(${this.primaryKeyList.map(c => snakeToCamel(c.name))})\n\t\t\t\t.orElseThrow(() -> new NoSuchElementException("${this._service.className}.notFound"));\n`;
-		out += "\t}\n\n";
-
-		out += "\t@Override\n";
-		out += `\tpublic ${className} save(${className} ${varName}) {\n`;
-		out += `\t\treturn ${varName}Repository.save(${varName});\n`;
-		out += "\t}\n\n";
-
-		out += "\t@Override\n";
-		out += `\tpublic ${className} update(${className} ${varName}) {\n`;
-		out += `\t\treturn ${varName}Repository.save(${varName});\n`;
-		out += "\t}\n\n";
-
-		out += "\t@Override\n";
-		out += `\tpublic void deleteById(${this.primaryKeyList.map(c => `${c.javaType} ${snakeToCamel(c.name)}`)}) {\n`;
-		out += `\t\t${snakeToCamel(this._service.entity.tableName)}Repository.deleteById(${this.primaryKeyList.map(c => snakeToCamel(c.name))});\n`;
-		out += "\t}\n\n";
-
-		this._service.entity.mtmColumns.forEach(col => {
-			out += "\t@Override\n";
-			out += `\tpublic List<${col.targetClassName}> findAll${plural(col.targetClassName)}By${primaryKeys.map(key => `${capitalize(key.varName)}`).join("And")}(${primaryKeys.map(key => `${key.javaType} ${key.varName}`).join(", ")}) {\n`;
-			out += `\t\treturn findById(${primaryKeys.map(key => `${key.varName}`).join(", ")}).get${plural(col.targetClassName)}();\n`;
-			out += "\t}\n";
-		});
-
-		out += "}\n";
-		return out;
+		super.auditable = false;
+		if (this.options.lombok) super.annotations.push(...lombokAnnotations);
+		if (!this.options.lombok) super.imports.push(...noLombokImports);
+		this._repository = repository;
+		this._service = service;
+		this._className = `${service.className}Impl`;
 	}
 
 	public get className(): string {
-		return `${this._service.className}Impl`;
+		return this._className;
 	}
 
-	public get packageName(): string {
-		if (!this._domain) return "package service.impl;";
-		return `package ${this._domain}.service.impl;`;
+	public get varName(): string {
+		return uncapitalize(this._service.className);
 	}
 
-	private get primaryKeyList() {
-		return this._service.entity.columns.filter(c => c.primaryKey);
+	public get service(): Service {
+		return this._service;
+	}
+
+	public get repository(): Repository {
+		return this._repository;
+	}
+
+	public get code() {
+		const entity = this._service.entity;
+
+		let code = "";
+		if (this.options.lombok) {
+			code += `\tprivate final ${this.repository.className} ${this.repository.varName};\n\n`;
+		} else {
+			code += "\t@Autowired\n";
+			code += `\tprivate ${this.repository.className} ${this._repository.varName};\n\n`;
+		}
+
+		code += "\t@Override\n";
+		code += `\tpublic List<${entity.className}> findAll() {\n`;
+		code += `\t\treturn ${entity.varName}Repository.findAll();\n`;
+		code += "\t}\n\n";
+
+		code += "\t@Override\n";
+		code += `\tpublic ${entity.className} findById(${entity.id.javaType} ${entity.id.varName}) {\n`;
+		code += `\t\treturn ${snakeToCamel(this._service.entity.tableName)}Repository.findById(${entity.id.varName})\n\t\t\t\t.orElseThrow(() -> new NoSuchElementException("${this._service.className}.notFound"));\n`;
+		code += "\t}\n\n";
+
+		code += "\t@Override\n";
+		code += `\tpublic ${entity.className} save(${entity.className} ${entity.varName}) {\n`;
+		code += `\t\treturn ${entity.varName}Repository.save(${entity.varName});\n`;
+		code += "\t}\n\n";
+
+		code += "\t@Override\n";
+		code += `\tpublic ${entity.className} update(${entity.className} ${entity.varName}) {\n`;
+		code += `\t\treturn ${entity.varName}Repository.save(${entity.varName});\n`;
+		code += "\t}\n\n";
+
+		code += "\t@Override\n";
+		code += `\tpublic void deleteById(${entity.id.javaType} ${entity.id.varName}) {\n`;
+		code += `\t\t${snakeToCamel(this._service.entity.tableName)}Repository.deleteById(${entity.id.varName});\n`;
+		code += "\t}\n\n";
+
+		this._service.entity.mtmColumns.forEach(col => {
+			code += "\t@Override\n";
+			code += `\tpublic List<${col.targetClassName}> findAll${plural(col.targetClassName)}By${entity.id.className}(${entity.id.javaType} ${entity.id.varName}) {\n`;
+			code += `\t\treturn findById(${this.service.entity.id.varName}).get${plural(col.targetClassName)}();\n`;
+			code += "\t}\n\n";
+		});
+
+		return this.wrap(code);
 	}
 }

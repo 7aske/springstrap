@@ -1,30 +1,47 @@
-export default class Auditable {
-	private readonly _domain: string;
+import JavaClass from "./def/JavaClass";
+import { uncapitalize } from "./utils";
+
+export default class Auditable extends JavaClass {
+	private readonly _className: string;
+
 	constructor(domain: string) {
-		this._domain = domain;
+		super(domain, "entity");
+		super.imports = [
+			"com.fasterxml.jackson.annotation.JsonIgnore",
+			"org.springframework.data.annotation.*",
+			"org.springframework.data.jpa.domain.support.AuditingEntityListener",
+			"javax.persistence.EntityListeners",
+			"javax.persistence.MappedSuperclass",
+			"java.io.Serializable",
+			"java.time.LocalDateTime",
+			"lombok.*"
+		];
+		super.annotations = [
+			"MappedSuperclass",
+			"Getter",
+			"Setter",
+			"EntityListeners(AuditingEntityListener.class)",
+			"NoArgsConstructor(access = AccessLevel.PROTECTED)",
+		];
+		super.interfaces = [
+			"Serializable",
+		];
+		this._className = "Auditable";
+	}
+
+	public get className(): string {
+		return this._className;
+	}
+
+	public get varName(): string {
+		return uncapitalize(this._className);
 	}
 
 	public get code() {
-		return `${this.packageName}
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.*;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import javax.persistence.EntityListeners;
-import javax.persistence.MappedSuperclass;
-import java.io.Serializable;
-import java.time.LocalDateTime;
-
-@MappedSuperclass
-@Getter
-@Setter
-@EntityListeners(AuditingEntityListener.class)
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-public abstract class Auditable implements Serializable {
-
+		const code = `
+	@CreatedDate
+	@JsonIgnore
+	private LocalDateTime createdDate;
 	@LastModifiedDate
 	@JsonIgnore
 	private LocalDateTime lastModifiedDate;
@@ -33,15 +50,7 @@ public abstract class Auditable implements Serializable {
 	private String lastModifiedBy;
 	@JsonIgnore
 	private Integer recordStatus = 1;
-}`;
-	}
-
-	public get domain(){
-		return this._domain;
-	}
-
-	public get packageName(): string {
-		if (!this._domain) return "package entity;";
-		return `package ${this._domain}.entity;`;
+`;
+		return this.wrap(code);
 	}
 }

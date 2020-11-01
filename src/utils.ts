@@ -51,4 +51,13 @@ export const formatAnnotations = (annotations: string[]): string => {
 	return `${annotations.map(anno => `@${anno}\n`).join("")}`;
 };
 
+export const strlenCompareTo = (a: string, b: string): number => {
+	return numCompareTo(a.length, b.length);
+}
+
+export const numCompareTo = (a: number, b:number): number => {
+	if (a > b) return 1;
+	if (a < b) return -1;
+	return 0;
+}
 

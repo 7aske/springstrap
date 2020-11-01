@@ -1,68 +1,51 @@
 import Entity from "./entity";
-import { snakeToCamel, uncapitalize, formatImports, capitalize, plural } from "./utils";
+import { uncapitalize, formatImports, plural } from "./utils";
+import JavaClass from "./def/JavaClass";
 
 
-export default class Service {
+export default class Service extends JavaClass{
 	private readonly _entity: Entity;
-	private readonly _domain: string;
+	private readonly _className: string;
 
 	constructor(entity: Entity, domain: string) {
-		this._domain = domain;
+		super(domain, "service");
+		super.imports= [
+			`${domain}.entity.*`,
+			`java.util.List`,
+		]
+		super.type = "interface";
+
+		this._className = entity.className + "Service";
 		this._entity = entity;
 	}
 
 	public get code(): string {
-		const className = this._entity.className;
-		const varname = uncapitalize(className);
-		const primaryKeys = this.entity.primaryKeyList;
+		const entity = this._entity;
 
-		const imports = [
-			`${this._domain}.entity.*`,
-			`java.util.List`,
-		];
-
-		let out = "";
-		out += `${this.packageName}\n\n`;
-		out += formatImports(imports);
-		out += `public interface ${this.className} {\n\n`;
-		out += `\tList<${className}> findAll();\n\n`;
-
-		out += `\t${className} save(${className} ${varname});\n\n`;
-
-		out += `\t${className} update(${className} ${varname});\n\n`;
-
-		out += `\t${className} findById(${this.primaryKeyList.join(", ")});\n`;
-
-		out += `\n\tvoid deleteById(${this.primaryKeyList.join(", ")});\n`;
-
+		let code = "\n";
+		code += `\tList<${entity.className}> findAll();\n\n`;
+		code += `\t${entity.className} save(${entity.className} ${entity.varName});\n\n`;
+		code += `\t${entity.className} update(${entity.className} ${entity.varName});\n\n`;
+		code += `\t${entity.className} findById(${this.entity.id.javaType} ${this.entity.id.varName});\n`;
+		code += `\n\tvoid deleteById(${this.entity.id.javaType} ${this.entity.id.varName});\n`;
 		this.entity.mtmColumns.forEach(col => {
-			out += `\n\tList<${col.targetClassName}> findAll${plural(col.targetClassName)}By${primaryKeys.map(key => `${capitalize(key.varName)}`).join("And")}(${primaryKeys.map(key => `${key.javaType} ${key.varName}`).join(", ")});\n`;
+			code += `\n\tList<${col.targetClassName}> findAll${plural(col.targetClassName)}By${entity.id.className}(${entity.id.javaType} ${entity.id.varName});\n`;
 			// out += `\n\tList<${col.className}> findAllBy${capitalize(col.targetVarName)}(${""});\n`;
 		});
 
-		out += "\n}\n";
-		return out;
+		return this.wrap(code);
 	}
 
 	public get className(): string {
-		return this._entity.className + "Service";
+		return this._className;
 	}
 
-	public get packageName(): string {
-		if (!this._domain) return "package service;";
-		return `package ${this._domain}.service;`;
+	public get varName(): string{
+		return uncapitalize(this.className);
 	}
 
-	private get primaryKeyList() {
-		return this._entity.columns.filter(c => c.primaryKey).map(c => `${c.javaType} ${snakeToCamel(c.name)}`);
-	}
-
-	get entity(): Entity {
+	public get entity(): Entity {
 		return this._entity;
-	}
-
-	get domain(): string {
-		return this._domain;
 	}
 }
 

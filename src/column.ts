@@ -1,9 +1,9 @@
 import { typeConv } from "./types";
 import { snakeToCamel, capitalize } from "./utils";
+import JavaAttribute from "./def/JavaAttribute";
 
-export default class Column {
+export default class Column extends JavaAttribute {
 	private readonly _name: string;
-	private readonly _className: string;
 	private readonly _type: DDLColumnType;
 	private readonly options: DDLColumnOptions;
 	private readonly _primaryKey?: { column: string };
@@ -13,8 +13,8 @@ export default class Column {
 	private readonly useLombok: boolean;
 
 	constructor({name, type, options}: DDLColumn, {foreignKey, primaryKey}: { foreignKey?: DDLForeignKey, primaryKey?: { column: string } }, useLombok = false) {
+		super();
 		this._name = name;
-		this._className = snakeToCamel(this._name, true).replace(/Fk$|^Fk/, "");
 		this._type = type;
 		this.options = options;
 		this._foreignKey = foreignKey;
@@ -49,12 +49,12 @@ export default class Column {
 		return out;
 	}
 
-	public get javaType(): string {
-		return this._javaType;
+	public get className(): string {
+		return capitalize(this.varName);
 	}
 
-	public get className(): string {
-		return this._className;
+	public get javaType(): string {
+		return this._javaType;
 	}
 
 	public get name(): string {

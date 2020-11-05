@@ -25,6 +25,7 @@ export const typeConv = (type: DDLColumnType) => {
 			return "LocalDate"
 		case "datetime":
 		case "timestamp":
+		case "time":
 			return "LocalDateTime";
 		case "bool":
 		case  "boolean":

@@ -12,6 +12,7 @@ type DDLType = "text" |
 	"date" |
 	"datetime" |
 	"timestamp" |
+	"time" |
 	"bool" |
 	"boolean" |
 	"tinyint" |

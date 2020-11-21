@@ -20,7 +20,6 @@ let filename = "";
 program
 	.arguments("<ddl_file.sql>")
 	.action(function (cmd: string) {
-		console.log(cmd);
 		filename = cmd;
 	})
 	.option("-t, --type <mariadb|mysql>", "database type")
@@ -151,7 +150,6 @@ try {
 }
 
 jsonDDL.forEach(tableDef => {
-	console.log(tableDef)
 	try {
 		// TODO: possibly extract as a filter
 		const isIgnored = (options.ignore as string).split(",").some(ignore => ignore === tableDef.name);

@@ -3,4 +3,5 @@ type EnumType = {
 	column: string;
 	className: string;
 	values: { [key: string]: string }[];
+	comment?: string;
 }

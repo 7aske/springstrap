@@ -59,8 +59,8 @@ export default abstract class JavaClass {
 		out += JavaClass.formatImports(this._imports);
 		if (this.comment){
 			out += "/**\n";
-			out += `${fold(this.comment).split("\n").map(line => `  * ${line}\n`).join("")}`
-			 out += "  */\n";
+			out += `${fold(this.comment).split("\n").map(line => ` * ${line}\n`).join("")}`
+			 out += " */\n";
 		}
 
 		out += JavaClass.formatAnnotations(this._annotations);

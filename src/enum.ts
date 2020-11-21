@@ -8,6 +8,8 @@ export class Enum extends JavaClass {
 
 	constructor(domain: string, def: EnumType, options?: SpringStrapOptions) {
 		super(domain, "entity.domain", options);
+		if (def.comment)
+			super.comment = def.comment;
 		this.lombok = false;
 		this.auditable = false;
 		this.type = "enum";

@@ -21,7 +21,9 @@ export default class Column extends JavaAttribute {
 		this._primaryKey = primaryKey;
 		this._javaType = this.typeConv();
 		this.useLombok = useLombok;
-		this._varname = snakeToCamel(name).replace(/Fk$|^Fk/, "");
+		this._varname = snakeToCamel(name)
+			.replace(/Fk$|^Fk/, "")
+			.replace(/Id$|^Id/, "");
 	}
 
 	public get code(): string {

@@ -15,12 +15,16 @@ export default class Entity extends JavaClass {
 	private readonly _mtmColumns: MTMColumn[];
 	private readonly _enums: Enum[];
 
-	constructor({name, columns, primaryKey, foreignKeys}: DDLTable,
+	constructor({name, columns, primaryKey, foreignKeys, options}: DDLTable,
 	            domain: string,
 	            mtmRel: DDLManyToMany[] = [],
 	            enums: EnumType[] = [],
-	            options?: SpringStrapOptions) {
-		super(domain, "entity", options);
+	            ssopt?: SpringStrapOptions) {
+		super(domain, "entity", ssopt);
+
+		if (primaryKey.columns.length !== 1)
+			throw new Error(`Composite PRIMARY KEY for table \`${name}\` - not generating entity.\n`);
+
 		super.imports = [
 			`javax.persistence.*`,
 			`java.time.*`,
@@ -35,11 +39,14 @@ export default class Entity extends JavaClass {
 		super.interfaces = [
 			"Serializable",
 		];
-		if (primaryKey.columns.length !== 1) throw new Error("Invalid PRIMARY KEY. Column length must be 1 - got " + primaryKey.columns.length);
+
+		if (options) {
+			super.comment = options.comment;
+		}
 
 		this._tableName = name;
 		this._className = capitalize(snakeToCamel(name));
-		this._enums = enums.map(e => new Enum(domain, e, options));
+		this._enums = enums.map(e => new Enum(domain, e, ssopt));
 		this._mtmColumns = mtmRel.map(rel => new MTMColumn(rel));
 		this._columns = columns
 			.filter(c => enums.every(e => e.column !== c.name))

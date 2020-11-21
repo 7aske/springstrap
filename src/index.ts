@@ -151,32 +151,37 @@ try {
 }
 
 jsonDDL.forEach(tableDef => {
-	// TODO: possibly extract as a filter
-	const isIgnored = (options.ignore as string).split(",").some(ignore => ignore === tableDef.name);
-	if (isIgnored) return;
-	if (isRelation(tableDef)) return;
+	console.log(tableDef)
+	try {
+		// TODO: possibly extract as a filter
+		const isIgnored = (options.ignore as string).split(",").some(ignore => ignore === tableDef.name);
+		if (isIgnored) return;
+		if (isRelation(tableDef)) return;
 
-	const manyToMany = relations.filter(rel => rel.source === tableDef.name);
-	const entityEnums = enums .filter(e => e.tables.some(t => t === tableDef.name))
+		const manyToMany = relations.filter(rel => rel.source === tableDef.name);
+		const entityEnums = enums.filter(e => e.tables.some(t => t === tableDef.name));
 
-	const entity = new Entity(tableDef, options.domain, manyToMany, entityEnums, options);
-	const repository = new Repository(entity, options.domain);
-	const service = new Service(entity, options.domain);
-	const serviceImpl = new ServiceImpl(service, repository, options.domain, options);
-	const controller = new Controller(service, options.domain, options);
+		const entity = new Entity(tableDef, options.domain, manyToMany, entityEnums, options);
+		const repository = new Repository(entity, options.domain);
+		const service = new Service(entity, options.domain);
+		const serviceImpl = new ServiceImpl(service, repository, options.domain, options);
+		const controller = new Controller(service, options.domain, options);
 
-	const entityFilename = join(entityDir, entity.fileName);
-	const repositoryFilename = join(repositoryDir, repository.fileName);
-	const serviceFilename = join(serviceDir, service.fileName);
-	const serviceImplFilename = join(serviceImplDir, serviceImpl.fileName);
-	const controllerFilename = join(controllerDir, entity.className + "Controller.java");
-	// @formatter:off
-	if ((!fs.existsSync(entityFilename)        || options.overwrite) && options.entity)      fs.writeFileSync(entityFilename, entity.code);
-	if ((!fs.existsSync(repositoryFilename)    || options.overwrite) && options.repository)  fs.writeFileSync(repositoryFilename, repository.code);
-	if ((!fs.existsSync(serviceFilename)       || options.overwrite) && options.service)     fs.writeFileSync(serviceFilename, service.code);
-	if ((!fs.existsSync(serviceImplFilename)   || options.overwrite) && options.serviceimpl) fs.writeFileSync(serviceImplFilename, serviceImpl.code);
-	if ((!fs.existsSync(controllerFilename)    || options.overwrite) && options.controller)  fs.writeFileSync(controllerFilename, controller.code);
-	// @formatter:on
+		const entityFilename = join(entityDir, entity.fileName);
+		const repositoryFilename = join(repositoryDir, repository.fileName);
+		const serviceFilename = join(serviceDir, service.fileName);
+		const serviceImplFilename = join(serviceImplDir, serviceImpl.fileName);
+		const controllerFilename = join(controllerDir, entity.className + "Controller.java");
+		// @formatter:off
+		if ((!fs.existsSync(entityFilename)        || options.overwrite) && options.entity)      fs.writeFileSync(entityFilename, entity.code);
+		if ((!fs.existsSync(repositoryFilename)    || options.overwrite) && options.repository)  fs.writeFileSync(repositoryFilename, repository.code);
+		if ((!fs.existsSync(serviceFilename)       || options.overwrite) && options.service)     fs.writeFileSync(serviceFilename, service.code);
+		if ((!fs.existsSync(serviceImplFilename)   || options.overwrite) && options.serviceimpl) fs.writeFileSync(serviceImplFilename, serviceImpl.code);
+		if ((!fs.existsSync(controllerFilename)    || options.overwrite) && options.controller)  fs.writeFileSync(controllerFilename, controller.code);
+		// @formatter:on
+	} catch (e) {
+		process.stderr.write(e.message);
+	}
 });
 
 const auditable = new Auditable(options.domain);

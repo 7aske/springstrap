@@ -53,11 +53,29 @@ export const formatAnnotations = (annotations: string[]): string => {
 
 export const strlenCompareTo = (a: string, b: string): number => {
 	return numCompareTo(a.length, b.length);
-}
+};
 
-export const numCompareTo = (a: number, b:number): number => {
+export const numCompareTo = (a: number, b: number): number => {
 	if (a > b) return 1;
 	if (a < b) return -1;
 	return 0;
-}
+};
+
+export const fold = (str: string, len = 80): string => {
+	if (len <= 0) throw new Error("Invalid fold length " + len);
+	if (str.length <= len) return str;
+
+	let count = 0;
+	let out = "";
+	str.split("").forEach((c) => {
+		if (count / len > 1 && c === " ") {
+			out += "\n";
+			count = 0;
+		} else {
+			out += c;
+		}
+		count++;
+	});
+	return out;
+};
 

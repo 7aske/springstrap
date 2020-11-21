@@ -1,4 +1,4 @@
-import { DEFAULT_SSOPT, strlenCompareTo } from "../utils";
+import { DEFAULT_SSOPT, strlenCompareTo, fold } from "../utils";
 
 export default abstract class JavaClass {
 	private readonly _domain: string;
@@ -9,6 +9,7 @@ export default abstract class JavaClass {
 	private _interfaces: string[];
 	private _superClasses: string[];
 	private _type: ClassType = "class";
+	private _comment?: string = undefined;
 	private static readonly LOMBOK_IMPORTS = [
 		"lombok.*",
 	];
@@ -56,6 +57,12 @@ export default abstract class JavaClass {
 
 		let out = `package ${this.package};\n\n`;
 		out += JavaClass.formatImports(this._imports);
+		if (this.comment){
+			out += "/**\n";
+			out += `${fold(this.comment).split("\n").map(line => `  * ${line}\n`).join("")}`
+			 out += "  */\n";
+		}
+
 		out += JavaClass.formatAnnotations(this._annotations);
 		out += `public ${this._type} ${this.className}`;
 		if (this._superClasses.length > 0) out += " extends " + this._superClasses.join(", ");
@@ -155,5 +162,13 @@ export default abstract class JavaClass {
 
 	protected set superClasses(value: string[]) {
 		this._superClasses = value;
+	}
+
+	get comment(): string {
+		return this._comment ?? "";
+	}
+
+	set comment(value: string) {
+		this._comment = value;
 	}
 }

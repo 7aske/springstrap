@@ -3,4 +3,9 @@ type DDLTable = {
 	columns: DDLColumn[];
 	primaryKey: DDLPrimaryKey;
 	foreignKeys?: DDLForeignKey[];
+	options?: DDLTableOptions;
+}
+
+type DDLTableOptions = {
+	comment: string;
 }

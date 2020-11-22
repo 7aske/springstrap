@@ -22,8 +22,7 @@ export default class Column extends JavaAttribute {
 		this._javaType = this.typeConv();
 		this.useLombok = useLombok;
 		this._varname = snakeToCamel(name)
-			.replace(/Fk$|^Fk/, "")
-			.replace(/Id$|^Id/, "");
+			.replace(/Fk$|^Fk/, "");
 	}
 
 	public get code(): string {

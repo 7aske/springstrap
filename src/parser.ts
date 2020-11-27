@@ -16,6 +16,7 @@ export const parseDDL = (sql: string, type: string): DDLTable[] => {
 	sql = sql.replace(/^GRANT.+$/mgi, "");
 	sql = sql.replace(/^USE.+$/mgi, "");
 	sql = sql.replace(/ real /mgi, " double ");
+	sql = sql.replace(/nvarchar\(/mgi, "varchar(");
 
 	parser.feed(sql);
 

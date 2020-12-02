@@ -55,7 +55,7 @@ export default class ServiceImpl extends JavaClass {
 	}
 
 	public get code() {
-		const entity = this._service.entity;
+		const ent = this._service.entity;
 
 		let code = "";
 		if (this.options.lombok) {
@@ -66,34 +66,34 @@ export default class ServiceImpl extends JavaClass {
 		}
 
 		code += "\t@Override\n";
-		code += `\tpublic List<${entity.className}> findAll() {\n`;
-		code += `\t\treturn ${entity.varName}Repository.findAll();\n`;
+		code += `\tpublic List<${ent.className}> findAll() {\n`;
+		code += `\t\treturn ${ent.varName}Repository.findAll();\n`;
 		code += "\t}\n\n";
 
 		code += "\t@Override\n";
-		code += `\tpublic ${entity.className} findById(${entity.id.javaType} ${entity.id.varName}) {\n`;
-		code += `\t\treturn ${snakeToCamel(this._service.entity.tableName)}Repository.findById(${entity.id.varName})\n\t\t\t\t.orElseThrow(() -> new NoSuchElementException("${this._service.className}.notFound"));\n`;
+		code += `\tpublic ${ent.className} findById(${ent.idArgs}) {\n`;
+		code += `\t\treturn ${snakeToCamel(ent.tableName)}Repository.findById(${ent.idVars})\n\t\t\t\t.orElseThrow(() -> new NoSuchElementException("${this._service.className}.notFound"));\n`;
 		code += "\t}\n\n";
 
 		code += "\t@Override\n";
-		code += `\tpublic ${entity.className} save(${entity.className} ${entity.varName}) {\n`;
-		code += `\t\treturn ${entity.varName}Repository.save(${entity.varName});\n`;
+		code += `\tpublic ${ent.className} save(${ent.className} ${ent.varName}) {\n`;
+		code += `\t\treturn ${ent.varName}Repository.save(${ent.varName});\n`;
 		code += "\t}\n\n";
 
 		code += "\t@Override\n";
-		code += `\tpublic ${entity.className} update(${entity.className} ${entity.varName}) {\n`;
-		code += `\t\treturn ${entity.varName}Repository.save(${entity.varName});\n`;
+		code += `\tpublic ${ent.className} update(${ent.className} ${ent.varName}) {\n`;
+		code += `\t\treturn ${ent.varName}Repository.save(${ent.varName});\n`;
 		code += "\t}\n\n";
 
 		code += "\t@Override\n";
-		code += `\tpublic void deleteById(${entity.id.javaType} ${entity.id.varName}) {\n`;
-		code += `\t\t${snakeToCamel(this._service.entity.tableName)}Repository.deleteById(${entity.id.varName});\n`;
+		code += `\tpublic void deleteById(${ent.idArgs}) {\n`;
+		code += `\t\t${snakeToCamel(ent.tableName)}Repository.deleteById(${ent.idVars});\n`;
 		code += "\t}\n\n";
 
-		this._service.entity.mtmColumns.forEach(col => {
+		ent.mtmColumns.forEach(col => {
 			code += "\t@Override\n";
-			code += `\tpublic List<${col.targetClassName}> findAll${plural(col.targetClassName)}By${entity.id.className}(${entity.id.javaType} ${entity.id.varName}) {\n`;
-			code += `\t\treturn findById(${this.service.entity.id.varName}).get${plural(col.targetClassName)}();\n`;
+			code += `\tpublic List<${col.targetClassName}> findAll${plural(col.targetClassName)}ById(${ent.idArgs}) {\n`;
+			code += `\t\treturn findById(${ent.idVars}).get${plural(col.targetClassName)}();\n`;
 			code += "\t}\n\n";
 		});
 

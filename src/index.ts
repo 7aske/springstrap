@@ -3,7 +3,7 @@ import * as fs from "fs";
 import { join } from "path";
 import Controller from "./controller";
 import Entity from "./entity";
-import { parseDDL, parseEums } from "./parser";
+import { parseDDL, parseEnums } from "./parser";
 import Repository from "./repository";
 import Service from "./service";
 import ServiceImpl from "./serviceimpl";
@@ -100,7 +100,7 @@ process.stdout.write("domain " + options.domain + "\n");
 
 
 const sql = fs.readFileSync(filename).toString();
-const enums = options.enums ? parseEums(options.enums) : [];
+const enums = options.enums ? parseEnums(options.enums) : [];
 let jsonDDL = parseDDL(sql, program.type);
 let relations: DDLManyToMany[] = [];
 jsonDDL.forEach(tableDef => {
@@ -178,7 +178,8 @@ jsonDDL.forEach(tableDef => {
 		if ((!fs.existsSync(controllerFilename)    || options.overwrite) && options.controller)  fs.writeFileSync(controllerFilename, controller.code);
 		// @formatter:on
 	} catch (e) {
-		process.stderr.write(e.message);
+		process.stderr.write(e + "\n");
+		process.stderr.write(e.message + "\n");
 	}
 });
 

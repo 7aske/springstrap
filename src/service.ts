@@ -1,5 +1,5 @@
 import Entity from "./entity";
-import { uncapitalize, formatImports, plural } from "./utils";
+import { uncapitalize, plural } from "./utils";
 import JavaClass from "./def/JavaClass";
 
 
@@ -20,17 +20,16 @@ export default class Service extends JavaClass{
 	}
 
 	public get code(): string {
-		const entity = this._entity;
+		const ent = this._entity;
 
 		let code = "\n";
-		code += `\tList<${entity.className}> findAll();\n\n`;
-		code += `\t${entity.className} save(${entity.className} ${entity.varName});\n\n`;
-		code += `\t${entity.className} update(${entity.className} ${entity.varName});\n\n`;
-		code += `\t${entity.className} findById(${this.entity.id.javaType} ${this.entity.id.varName});\n`;
-		code += `\n\tvoid deleteById(${this.entity.id.javaType} ${this.entity.id.varName});\n`;
+		code += `\tList<${ent.className}> findAll();\n\n`;
+		code += `\t${ent.className} save(${ent.className} ${ent.varName});\n\n`;
+		code += `\t${ent.className} update(${ent.className} ${ent.varName});\n\n`;
+		code += `\t${ent.className} findById(${ent.idArgs});\n`;
+		code += `\n\tvoid deleteById(${ent.idArgs});\n`;
 		this.entity.mtmColumns.forEach(col => {
-			code += `\n\tList<${col.targetClassName}> findAll${plural(col.targetClassName)}By${entity.id.className}(${entity.id.javaType} ${entity.id.varName});\n`;
-			// out += `\n\tList<${col.className}> findAllBy${capitalize(col.targetVarName)}(${""});\n`;
+			code += `\n\tList<${col.targetClassName}> findAll${plural(col.targetClassName)}ById(${ent.idArgs});\n`;
 		});
 
 		return this.wrap(code);

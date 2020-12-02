@@ -10,7 +10,7 @@ export default class Entity extends JavaClass {
 	private static AUDIT_FIELDS = ["created_date", "created_by", "last_modified_by", "last_modified_date", "record_status"];
 	private readonly _tableName: string;
 	private readonly _className: string;
-	private readonly _id: Column;
+	private readonly _id: Column[];
 	private readonly _columns: Column[];
 	private readonly _mtmColumns: MTMColumn[];
 	private readonly _enums: Enum[];
@@ -21,9 +21,6 @@ export default class Entity extends JavaClass {
 	            enums: EnumType[] = [],
 	            ssopt?: SpringStrapOptions) {
 		super(domain, "entity", ssopt);
-
-		if (primaryKey.columns.length !== 1)
-			throw new Error(`Composite PRIMARY KEY for table \`${name}\` - not generating entity.\n`);
 
 		super.imports = [
 			`javax.persistence.*`,
@@ -56,7 +53,7 @@ export default class Entity extends JavaClass {
 				foreignKey: (foreignKeys ?? []).find(fk => fk.columns.find(c => c.column === col.name)),
 			}, this.options.lombok));
 
-		this._id = this._columns.find(c => c.primaryKey)!;
+		this._id = this._columns.filter(c => c.primaryKey)!;
 	}
 
 	public get code() {
@@ -73,9 +70,26 @@ export default class Entity extends JavaClass {
 		return this.wrap(code);
 	}
 
-	get id(): Column {
+	get id(): Column[] {
 		return this._id;
 	}
+
+	public get idArgs(): string {
+		return this.id.map(pk => `${pk.javaType} ${pk.varName}`).join(", ");
+	}
+
+	public get idVars(): string {
+		return this.id.map(pk => pk.varName).join(", ");
+	}
+
+	public get idPathArgs(): string {
+		return this.id.map(pk => `@PathVariable ${pk.javaType} ${pk.varName}`).join(", ");
+	}
+
+	public get idPathVars(): string {
+		return this.id.map(pk => `{${pk.varName}}`).join("/");
+	}
+
 
 	public get tableName(): string {
 		return this._tableName;

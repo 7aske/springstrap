@@ -26,6 +26,7 @@ export default class Auditable extends JavaClass {
 		super.interfaces = [
 			"Serializable",
 		];
+		super.abstract = true;
 		this._className = "Auditable";
 	}
 

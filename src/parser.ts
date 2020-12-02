@@ -24,6 +24,6 @@ export const parseDDL = (sql: string, type: string): DDLTable[] => {
 	return parser.toCompactJson(parsedJsonFormat) as DDLTable[];
 };
 
-export const parseEums = (filepath: string): EnumType[] =>{
+export const parseEnums = (filepath: string): EnumType[] =>{
 	return JSON.parse(fs.readFileSync(filepath).toString()).enums;
 }

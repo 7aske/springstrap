@@ -25,7 +25,7 @@ export default class Controller extends JavaClass {
 
 	public get code(): string {
 		const domain = this.domain;
-		const entity = this._service.entity;
+		const ent = this._service.entity;
 		const serviceName = this._service.className;
 		const serviceVarName = this._service.varName;
 		const endpoint = this.endpoint;
@@ -73,41 +73,45 @@ export default class Controller extends JavaClass {
 		});
 
 		out += `\t@GetMapping\n`;
-		out += `\tpublic ResponseEntity<List<${entity.className}>> getAll() {\n`;
+		out += `\tpublic ResponseEntity<List<${ent.className}>> getAll() {\n`;
 		out += `\t\treturn ResponseEntity.ok(${serviceVarName}.findAll());\n`;
 		out += `\t}\n\n`;
 
-		out += `\t@GetMapping("/{${entity.id.varName}}")\n`;
-		out += `\tpublic ResponseEntity<${entity.className}> getById(@PathVariable ${entity.id.javaType} ${entity.id.varName}) {\n`;
-		out += `\t\treturn ResponseEntity.ok(${serviceVarName}.findById(${entity.id.varName}));\n`;
+		out += `\t@GetMapping("/${ent.idPathVars}")\n`;
+		out += `\tpublic ResponseEntity<${ent.className}> getById(${ent.idPathArgs}) {\n`;
+		out += `\t\treturn ResponseEntity.ok(${serviceVarName}.findById(${ent.idVars}));\n`;
 		out += `\t}\n\n`;
 
 		out += `\t@PostMapping\n`;
-		out += `\tpublic ResponseEntity<${entity.className}> save(@RequestBody ${entity.className} ${entity.varName}) {\n`;
-		out += `\t\treturn ResponseEntity.ok(${serviceVarName}.save(${entity.varName}));\n`;
+		out += `\tpublic ResponseEntity<${ent.className}> save(@RequestBody ${ent.className} ${ent.varName}) {\n`;
+		out += `\t\treturn ResponseEntity.ok(${serviceVarName}.save(${ent.varName}));\n`;
 		out += `\t}\n\n`;
 
 		out += `\t@PutMapping\n`;
-		out += `\tpublic ResponseEntity<${entity.className}> update(@RequestBody ${entity.className} ${entity.varName}) {\n`;
-		out += `\t\treturn ResponseEntity.ok(${serviceVarName}.update(${entity.varName}));\n`;
+		out += `\tpublic ResponseEntity<${ent.className}> update(@RequestBody ${ent.className} ${ent.varName}) {\n`;
+		out += `\t\treturn ResponseEntity.ok(${serviceVarName}.update(${ent.varName}));\n`;
 		out += `\t}\n\n`;
 
-		out += `\t@PutMapping("/{${entity.id.varName}}")\n`;
-		out += `\tpublic ResponseEntity<${entity.className}> updateById(@PathVariable ${entity.id.javaType} ${entity.id.varName}, @RequestBody ${entity.className} ${entity.varName}) {\n`;
-		out += `\t\t${entity.varName}.setId(${entity.id.varName});\n`;
-		out += `\t\treturn ResponseEntity.ok(${serviceVarName}.update(${entity.varName}));\n`;
+		if (ent.id.length === 1){
+			out += `\t@PutMapping("/${ent.idPathVars}")\n`;
+			out += `\tpublic ResponseEntity<${ent.className}> updateById(@RequestBody ${ent.className} ${ent.varName}, ${ent.idPathArgs}) {\n`;
+			ent.id.forEach(pk => {
+				out += `\t\t${ent.varName}.setId(${pk.varName});\n`;
+			});
+			out += `\t\treturn ResponseEntity.ok(${serviceVarName}.update(${ent.varName}));\n`;
+			out += `\t}\n\n`;
+		}
+
+		out += `\t@DeleteMapping("/${ent.idPathVars}")\n`;
+		out += `\tpublic void deleteById(${ent.idPathArgs}) {\n`;
+		out += `\t\t${serviceVarName}.deleteById(${ent.idVars});\n`;
 		out += `\t}\n\n`;
 
-		out += `\t@DeleteMapping("/{${entity.id.varName}}")\n`;
-		out += `\tpublic void deleteById(@PathVariable ${entity.id.javaType} ${entity.id.varName}) {\n`;
-		out += `\t\t${serviceVarName}.deleteById(${entity.id.varName});\n`;
-		out += `\t}\n\n`;
-
-		this._service.entity.mtmColumns.forEach(col => {
-
-			out += `\t@GetMapping("/{${entity.id.varName}}/${plural(col.target.replace("_", "-"))}")\n`;
-			out += `\tpublic ResponseEntity<List<${col.targetClassName}>> getAll${plural(col.targetClassName)}(@PathVariable ${entity.id.javaType} ${entity.id.varName}) {\n`;
-			out += `\t\treturn ResponseEntity.ok(${serviceVarName}.findAll${plural(col.targetClassName)}By${entity.id.className}(${entity.id.varName}));\n`;
+		ent.mtmColumns.forEach(col => {
+			const listName = plural(col.target.replace("_", "-"));
+			out += `\t@GetMapping("/${ent.idPathVars}/${listName}")\n`;
+			out += `\tpublic ResponseEntity<List<${col.targetClassName}>> getAll${plural(col.targetClassName)}(${ent.idPathArgs}) {\n`;
+			out += `\t\treturn ResponseEntity.ok(${serviceVarName}.findAll${plural(col.targetClassName)}ById(${ent.idVars}));\n`;
 			out += `\t}\n\n`;
 
 		});

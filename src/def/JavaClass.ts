@@ -10,6 +10,7 @@ export default abstract class JavaClass {
 	private _superClasses: string[];
 	private _type: ClassType = "class";
 	private _comment?: string = undefined;
+	private _abstract: boolean = false;
 	private static readonly LOMBOK_IMPORTS = [
 		"lombok.*",
 	];
@@ -64,7 +65,7 @@ export default abstract class JavaClass {
 		}
 
 		out += JavaClass.formatAnnotations(this._annotations);
-		out += `public ${this._type} ${this.className}`;
+		out += `public ${this._abstract ? "abstract " : ""} ${this._type} ${this.className}`;
 		if (this._superClasses.length > 0) out += " extends " + this._superClasses.join(", ");
 		if (this._interfaces.length > 0) out += " implements " + this._interfaces.join(", ");
 		out += ` {\n`;
@@ -170,5 +171,13 @@ export default abstract class JavaClass {
 
 	set comment(value: string) {
 		this._comment = value;
+	}
+
+	get abstract(): boolean {
+		return this._abstract;
+	}
+
+	set abstract(value: boolean) {
+		this._abstract = value;
 	}
 }

@@ -11,15 +11,11 @@ export const typeConv = (type: DDLColumnType) => {
 		case "smallint":
 		case "int":
 		case "mediumint":
-			if (type.width === 1) {
-				return "boolean"
-			}
+			if (type.width === 1) return "boolean"
 			return "Integer";
 		case "long":
 		case "bigint":
-			if (type.width === 1) {
-				return "boolean"
-			}
+			if (type.width === 1) return "boolean"
 			return "Long";
 		case "date":
 			return "LocalDate"

@@ -22,9 +22,9 @@ export default class AuditorAware extends JavaClass {
 		return `package ${this.package};
 
 import org.springframework.data.domain.AuditorAware;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+//import org.springframework.security.core.Authentication;
+//import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
 
@@ -32,13 +32,12 @@ import java.util.Optional;
 public class CustomAuditorAware implements AuditorAware<String> {
 	@Override
 	public Optional<String> getCurrentAuditor() {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		// After implementing Spring Security uncomment these lines to 
+		// enable user auditing
+		// Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		// if (authentication != null) return Optional.of(authentication.getName());
 
-		if (authentication == null) {
-			return Optional.of("system");
-		}
-
-		return Optional.of(authentication.getName());
+		return Optional.of("system");
 	}
 }`;
 	}

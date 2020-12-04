@@ -27,12 +27,21 @@ export const plural = (str: string) => {
 
 /**
  * Checks if the provided table's sole purpose is to provide a many-to-many relationship
+ * fk_count = pk_count = col_count
  * @param table
  */
-export const isRelation = (table: DDLTable): boolean => {
+export const isMtmTable = (table: DDLTable): boolean => {
 	return table.foreignKeys !== undefined && table.primaryKey !== undefined &&
 		table.columns.length === table.foreignKeys.length &&
 		table.primaryKey.columns.length === table.foreignKeys.length;
+};
+
+/**
+ * Checks if the provided table has a composite primary key
+ * @param table
+ */
+export const hasComposite = (table: DDLTable) => {
+	return table.primaryKey !== undefined && table.primaryKey.columns.length > 1;
 };
 
 export const DEFAULT_SSOPT: SpringStrapOptions = {
@@ -65,14 +74,14 @@ export const fold = (str: string, len = 80): string => {
 	if (len <= 0) throw new Error("Invalid fold length " + len);
 	if (str.length <= len) return str;
 
-	const openParen = ["(","[", "{"];
-	const closedParen = [")","]", "}"];
+	const openParen = ["(", "[", "{"];
+	const closedParen = [")", "]", "}"];
 	let parenCount = 0;
 	let count = 0;
 	let out = "";
 	str.split("").forEach((c) => {
-		if (c in openParen) parenCount ++;
-		if (c in closedParen) parenCount --;
+		if (c in openParen) parenCount++;
+		if (c in closedParen) parenCount--;
 		if (count / len > 1 && c === " " && parenCount <= 0) {
 			out += "\n";
 			count = 0;

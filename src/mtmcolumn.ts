@@ -12,8 +12,8 @@ export default class MTMColumn {
 	private readonly _collectionType = "List";
 
 	constructor(ref: DDLManyToMany) {
-		this._inverseJoinName = ref.source_column;
-		this._joinName = ref.target_column;
+		this._inverseJoinName = ref.target_column;
+		this._joinName = ref.source_column;
 		this._targetClassName = snakeToCamel(ref.target, true);
 		this._targetVarName = plural(snakeToCamel(ref.target));
 		this._target = ref.target;

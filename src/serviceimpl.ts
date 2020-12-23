@@ -77,7 +77,7 @@ export default class ServiceImpl extends JavaClass {
 
 		code += "\t@Override\n";
 		code += `\tpublic ${ent.className} save(${ent.className} ${ent.varName}) {\n`;
-		code += `\t\treturn ${ent.varName}Repository.save(${ent.varName});\n`;
+		code += `\t\treturn ${ent.varName}Repository.status.body(${ent.varName});\n`;
 		code += "\t}\n\n";
 
 		code += "\t@Override\n";
@@ -94,6 +94,27 @@ export default class ServiceImpl extends JavaClass {
 			code += "\t@Override\n";
 			code += `\tpublic List<${col.targetClassName}> findAll${plural(col.targetClassName)}ById(${ent.idArgs}) {\n`;
 			code += `\t\treturn findById(${ent.idVars}).get${plural(col.targetClassName)}();\n`;
+			code += "\t}\n\n";
+
+			code += "\t@Override\n";
+			code += `\tpublic List<${col.targetClassName}> add${plural(col.targetClassName)}ById(${ent.idArgs}, List<${col.targetClassName}> ${col.targetVarName}) {\n`;
+			code += `\t\t${ent.className} ${ent.varName} = findById(${ent.idVars});\n`
+			code += `\t\t${ent.varName}.get${plural(col.targetClassName)}().addAll(${col.targetVarName});\n`
+			code += `\t\treturn ${ent.varName}Repository.save(${ent.varName}).get${plural(col.targetClassName)}();\n`;
+			code += "\t}\n\n";
+
+			code += "\t@Override\n";
+			code += `\tpublic List<${col.targetClassName}> set${plural(col.targetClassName)}ById(${ent.idArgs}, List<${col.targetClassName}> ${col.targetVarName}) {\n`;
+			code += `\t\t${ent.className} ${ent.varName} = findById(${ent.idVars});\n`
+			code += `\t\t${ent.varName}.set${plural(col.targetClassName)}(${col.targetVarName});\n`
+			code += `\t\treturn ${ent.varName}Repository.save(${ent.varName}).get${plural(col.targetClassName)}();\n`;
+			code += "\t}\n\n";
+
+			code += "\t@Override\n";
+			code += `\tpublic List<${col.targetClassName}> delete${plural(col.targetClassName)}ById(${ent.idArgs}, List<${col.targetClassName}> ${col.targetVarName}) {\n`;
+			code += `\t\t${ent.className} ${ent.varName} = findById(${ent.idVars});\n`
+			code += `\t\t${ent.varName}.get${plural(col.targetClassName)}().removeAll(${col.targetVarName});\n`
+			code += `\t\treturn ${ent.varName}Repository.save(${ent.varName}).get${plural(col.targetClassName)}();\n`;
 			code += "\t}\n\n";
 		});
 

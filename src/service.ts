@@ -12,6 +12,7 @@ export default class Service extends JavaClass{
 		super.imports= [
 			`${domain}.entity.*`,
 			`java.util.List`,
+			`java.util.Collection`,
 		]
 		super.type = "interface";
 
@@ -30,6 +31,9 @@ export default class Service extends JavaClass{
 		code += `\n\tvoid deleteById(${ent.idArgs});\n`;
 		this.entity.mtmColumns.forEach(col => {
 			code += `\n\tList<${col.targetClassName}> findAll${plural(col.targetClassName)}ById(${ent.idArgs});\n`;
+			code += `\n\tList<${col.targetClassName}> add${plural(col.targetClassName)}ById(${ent.idArgs}, List<${col.targetClassName}> ${col.targetVarName});\n`;
+			code += `\n\tList<${col.targetClassName}> set${plural(col.targetClassName)}ById(${ent.idArgs}, List<${col.targetClassName}> ${col.targetVarName});\n`;
+			code += `\n\tList<${col.targetClassName}> delete${plural(col.targetClassName)}ById(${ent.idArgs}, List<${col.targetClassName}> ${col.targetVarName});\n`;
 		});
 
 		return this.wrap(code);

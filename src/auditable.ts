@@ -41,15 +41,11 @@ export default class Auditable extends JavaClass {
 	public get code() {
 		const code = `
 	@CreatedDate
-	@JsonIgnore
 	private LocalDateTime createdDate;
 	@LastModifiedDate
-	@JsonIgnore
 	private LocalDateTime lastModifiedDate;
 	@LastModifiedBy
-	@JsonIgnore
 	private String lastModifiedBy;
-	@JsonIgnore
 	private Integer recordStatus = 1;
 `;
 		return this.wrap(code);

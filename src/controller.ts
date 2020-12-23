@@ -92,15 +92,15 @@ export default class Controller extends JavaClass {
 		out += `\t\treturn ResponseEntity.ok(${serviceVarName}.update(${ent.varName}));\n`;
 		out += `\t}\n\n`;
 
-		if (ent.id.length === 1){
-			out += `\t@PutMapping("/${ent.idPathVars}")\n`;
-			out += `\tpublic ResponseEntity<${ent.className}> updateById(@RequestBody ${ent.className} ${ent.varName}, ${ent.idPathArgs}) {\n`;
-			ent.id.forEach(pk => {
-				out += `\t\t${ent.varName}.setId(${pk.varName});\n`;
-			});
-			out += `\t\treturn ResponseEntity.ok(${serviceVarName}.update(${ent.varName}));\n`;
-			out += `\t}\n\n`;
-		}
+		// if (ent.id.length === 1){
+		// 	out += `\t@PutMapping("/${ent.idPathVars}")\n`;
+		// 	out += `\tpublic ResponseEntity<${ent.className}> updateById(@RequestBody ${ent.className} ${ent.varName}, ${ent.idPathArgs}) {\n`;
+		// 	ent.id.forEach(pk => {
+		// 		out += `\t\t${ent.varName}.setId(${pk.varName});\n`;
+		// 	});
+		// 	out += `\t\treturn ResponseEntity.ok(${serviceVarName}.update(${ent.varName}));\n`;
+		// 	out += `\t}\n\n`;
+		// }
 
 		out += `\t@DeleteMapping("/${ent.idPathVars}")\n`;
 		out += `\tpublic void deleteById(${ent.idPathArgs}) {\n`;
@@ -110,10 +110,24 @@ export default class Controller extends JavaClass {
 		ent.mtmColumns.forEach(col => {
 			const listName = plural(col.target.replace("_", "-"));
 			out += `\t@GetMapping("/${ent.idPathVars}/${listName}")\n`;
-			out += `\tpublic ResponseEntity<List<${col.targetClassName}>> getAll${plural(col.targetClassName)}(${ent.idPathArgs}) {\n`;
+			out += `\tpublic ResponseEntity<List<${col.targetClassName}>> get${plural(col.targetClassName)}(${ent.idPathArgs}) {\n`;
 			out += `\t\treturn ResponseEntity.ok(${serviceVarName}.findAll${plural(col.targetClassName)}ById(${ent.idVars}));\n`;
 			out += `\t}\n\n`;
 
+			out += `\t@PostMapping("/${ent.idPathVars}/${listName}")\n`;
+			out += `\tpublic ResponseEntity<List<${col.targetClassName}>> set${plural(col.targetClassName)}(${ent.idPathArgs}, @RequestBody List<${col.targetClassName}> ${col.targetVarName}) {\n`;
+			out += `\t\treturn ResponseEntity.ok(${serviceVarName}.set${plural(col.targetClassName)}ById(${ent.idVars}, ${col.targetVarName}));\n`;
+			out += `\t}\n\n`;
+
+			out += `\t@PutMapping("/${ent.idPathVars}/${listName}")\n`;
+			out += `\tpublic ResponseEntity<List<${col.targetClassName}>> add${plural(col.targetClassName)}(${ent.idPathArgs}, @RequestBody List<${col.targetClassName}> ${col.targetVarName}) {\n`;
+			out += `\t\treturn ResponseEntity.ok(${serviceVarName}.add${plural(col.targetClassName)}ById(${ent.idVars}, ${col.targetVarName}));\n`;
+			out += `\t}\n\n`;
+
+			out += `\t@DeleteMapping("/${ent.idPathVars}/${listName}")\n`;
+			out += `\tpublic ResponseEntity<List<${col.targetClassName}>> delete${plural(col.targetClassName)}(${ent.idPathArgs}, @RequestBody List<${col.targetClassName}> ${col.targetVarName}) {\n`;
+			out += `\t\treturn ResponseEntity.ok(${serviceVarName}.delete${plural(col.targetClassName)}ById(${ent.idVars}, ${col.targetVarName}));\n`;
+			out += `\t}\n\n`;
 		});
 
 		this._service.entity.enums.forEach(e => {

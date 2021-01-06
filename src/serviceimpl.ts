@@ -77,7 +77,7 @@ export default class ServiceImpl extends JavaClass {
 
 		code += "\t@Override\n";
 		code += `\tpublic ${ent.className} save(${ent.className} ${ent.varName}) {\n`;
-		code += `\t\treturn ${ent.varName}Repository.status.body(${ent.varName});\n`;
+		code += `\t\treturn ${ent.varName}Repository.save(${ent.varName});\n`;
 		code += "\t}\n\n";
 
 		code += "\t@Override\n";

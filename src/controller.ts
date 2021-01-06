@@ -84,7 +84,7 @@ export default class Controller extends JavaClass {
 
 		out += `\t@PostMapping\n`;
 		out += `\tpublic ResponseEntity<${ent.className}> save(@RequestBody ${ent.className} ${ent.varName}) {\n`;
-		out += `\t\treturn ResponseEntity.ok(${serviceVarName}.save(${ent.varName}));\n`;
+		out += `\t\treturn ResponseEntity.status(201).body(${serviceVarName}.save(${ent.varName}));\n`;
 		out += `\t}\n\n`;
 
 		out += `\t@PutMapping\n`;

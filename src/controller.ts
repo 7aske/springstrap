@@ -34,8 +34,9 @@ export default class Controller extends JavaClass {
 			`${domain ? domain + "." : ""}entity.*`,
 			`${domain ? domain + "." : ""}service.*`,
 			"org.springframework.web.bind.annotation.*",
-			`org.springframework.http.ResponseEntity`,
-			`java.util.List`,
+			"org.springframework.http.ResponseEntity",
+			"org.springframework.http.HttpStatus",
+			"java.util.List",
 		];
 		const lombokImports = [
 			`lombok.*`,
@@ -77,14 +78,14 @@ export default class Controller extends JavaClass {
 				out += `\t@Autowired\n\tprivate ${service};\n\n`;
 		});
 
-		out += this.getMethodBuilder("getAll")
+		out += this.getMethodBuilder(`getAll${plural(ent.className)}`)
 			.getMapping()
 			.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll());\n`)
 			.return(list(ent.className))
 			.build()
 			.generate();
 
-		out += this.getMethodBuilder("getById")
+		out += this.getMethodBuilder(`get${ent.className}ById`)
 			.getMapping(ent.idPathVars)
 			.pathVariables(ent.idArgs)
 			.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findById(${ent.idVars}));\n`)
@@ -92,23 +93,23 @@ export default class Controller extends JavaClass {
 			.build()
 			.generate();
 
-		out += this.getMethodBuilder("save")
+		out += this.getMethodBuilder(`save${ent.className}`)
 			.postMapping()
 			.requestBody([[ent.className, ent.varName]])
-			.implementation(`\treturn ResponseEntity.status(201).body(${serviceVarName}.save(${ent.varName}));\n`)
+			.implementation(`\treturn ResponseEntity.status(HttpStatus.CREATED).body(${serviceVarName}.save(${ent.varName}));\n`)
 			.return(ent.className)
 			.build()
 			.generate();
 
-		out += this.getMethodBuilder("update")
+		out += this.getMethodBuilder(`update${ent.className}`)
 			.putMapping()
 			.requestBody([[ent.className, ent.varName]])
-			.implementation(`\treturn ResponseEntity.status(201).body(${serviceVarName}.save(${ent.varName}));\n`)
+			.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.update(${ent.varName}));\n`)
 			.return(ent.className)
 			.build()
 			.generate();
 
-		out += this.getMethodBuilder("deleteById")
+		out += this.getMethodBuilder(`delete${ent.className}ById`)
 			.deleteMapping(ent.idPathVars)
 			.pathVariables(ent.idArgs)
 			.implementation(`\t${serviceVarName}.deleteById(${ent.idVars});\n`)
@@ -118,7 +119,7 @@ export default class Controller extends JavaClass {
 		ent.mtmColumns.forEach(col => {
 			const listName = plural(col.target.replace("_", "-"));
 
-			out += this.getMethodBuilder(`get${plural(col.targetClassName)}`)
+			out += this.getMethodBuilder(`get${ent.className}${plural(col.targetClassName)}`)
 				.getMapping(`${ent.idPathVars}/${listName}`)
 				.pathVariables(ent.idArgs)
 				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll${plural(col.targetClassName)}ById(${ent.idVars}));\n`)
@@ -126,7 +127,7 @@ export default class Controller extends JavaClass {
 				.build()
 				.generate();
 
-			out += this.getMethodBuilder(`set${plural(col.targetClassName)}`)
+			out += this.getMethodBuilder(`set${ent.className}${plural(col.targetClassName)}`)
 				.postMapping(`${ent.idPathVars}/${listName}`)
 				.pathVariables(ent.idArgs)
 				.requestBody([[list(col.targetClassName), col.targetVarName]])
@@ -135,7 +136,7 @@ export default class Controller extends JavaClass {
 				.build()
 				.generate();
 
-			out += this.getMethodBuilder(`add${plural(col.targetClassName)}`)
+			out += this.getMethodBuilder(`add${ent.className}${plural(col.targetClassName)}`)
 				.putMapping(`${ent.idPathVars}/${listName}`)
 				.pathVariables(ent.idArgs)
 				.requestBody([[list(col.targetClassName), col.targetVarName]])
@@ -144,7 +145,7 @@ export default class Controller extends JavaClass {
 				.build()
 				.generate();
 
-			out += this.getMethodBuilder(`delete${plural(col.targetClassName)}`)
+			out += this.getMethodBuilder(`delete${ent.className}${plural(col.targetClassName)}`)
 				.deleteMapping(`${ent.idPathVars}/${listName}`)
 				.pathVariables(ent.idArgs)
 				.requestBody([[list(col.targetClassName), col.targetVarName]])
@@ -155,7 +156,7 @@ export default class Controller extends JavaClass {
 		});
 
 		this._service.entity.enums.forEach(e => {
-			out += this.getMethodBuilder(`get${e.className}`)
+			out += this.getMethodBuilder(`get${ent.className}${e.className}`)
 				.getMapping(plural(uncapitalize(e.className)))
 				.implementation(`\treturn ResponseEntity.ok(${e.className}.values());\n`)
 				.return("Object[]")

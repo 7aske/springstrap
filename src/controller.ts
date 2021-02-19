@@ -87,7 +87,7 @@ export default class Controller extends JavaClass {
 		out += this.getMethodBuilder("getById")
 			.getMapping(ent.idPathVars)
 			.pathVariables(ent.idArgs)
-			.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findById(${ent.idPathArgs}));\n`)
+			.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findById(${ent.idVars}));\n`)
 			.return(ent.className)
 			.build()
 			.generate();
@@ -109,7 +109,7 @@ export default class Controller extends JavaClass {
 			.generate();
 
 		out += this.getMethodBuilder("deleteById")
-			.deleteMapping()
+			.deleteMapping(ent.idPathVars)
 			.pathVariables(ent.idArgs)
 			.implementation(`\t${serviceVarName}.deleteById(${ent.idVars});\n`)
 			.build()
@@ -130,24 +130,25 @@ export default class Controller extends JavaClass {
 				.postMapping(`${ent.idPathVars}/${listName}`)
 				.pathVariables(ent.idArgs)
 				.requestBody([[list(col.targetClassName), col.targetVarName]])
-				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.set${plural(col.targetClassName)}ById(${ent.idVars}));\n`)
+				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.set${plural(col.targetClassName)}ById(${ent.idVars}, ${col.targetVarName}));\n`)
 				.return(list(col.targetClassName))
 				.build()
 				.generate();
 
-			out += this.getMethodBuilder(`set${plural(col.targetClassName)}`)
+			out += this.getMethodBuilder(`add${plural(col.targetClassName)}`)
 				.putMapping(`${ent.idPathVars}/${listName}`)
 				.pathVariables(ent.idArgs)
 				.requestBody([[list(col.targetClassName), col.targetVarName]])
-				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.add${plural(col.targetClassName)}ById(${ent.idVars}));\n`)
+				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.add${plural(col.targetClassName)}ById(${ent.idVars}, ${col.targetVarName}));\n`)
 				.return(list(col.targetClassName))
 				.build()
 				.generate();
 
-			out += this.getMethodBuilder(`set${plural(col.targetClassName)}`)
-				.putMapping(`${ent.idPathVars}/${listName}`)
+			out += this.getMethodBuilder(`delete${plural(col.targetClassName)}`)
+				.deleteMapping(`${ent.idPathVars}/${listName}`)
 				.pathVariables(ent.idArgs)
-				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.delete${plural(col.targetClassName)}ById(${ent.idVars}));\n`)
+				.requestBody([[list(col.targetClassName), col.targetVarName]])
+				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.delete${plural(col.targetClassName)}ById(${ent.idVars}, ${col.targetVarName}));\n`)
 				.return(list(col.targetClassName))
 				.build()
 				.generate();

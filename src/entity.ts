@@ -7,7 +7,7 @@ import JavaClass from "./def/JavaClass";
 const {snakeToCamel} = require("./utils");
 
 export default class Entity extends JavaClass {
-	private static AUDIT_FIELDS = ["created_date", "created_by", "last_modified_by", "last_modified_date", "record_status"];
+	public static readonly AUDIT_FIELDS = ["created_date", "created_by", "last_modified_by", "last_modified_date", "record_status"];
 	private readonly _tableName: string;
 	private readonly _className: string;
 	private readonly _id: Column[];
@@ -117,6 +117,17 @@ export default class Entity extends JavaClass {
 
 	public get enums() {
 		return this._enums;
+	}
+
+	/**
+	 * Checks if the provided table's sole purpose is to provide a many-to-many relationship
+	 * fk_count = pk_count = col_count
+	 * @param table
+	 */
+	public static isMtmTable(table: DDLTable){
+		return table.foreignKeys !== undefined && table.primaryKey !== undefined &&
+			(table.columns.filter(col => !Entity.AUDIT_FIELDS.some(f => f === col.name)).length === table.foreignKeys.length) &&
+			table.primaryKey.columns.length === table.foreignKeys.length;
 	}
 }
 

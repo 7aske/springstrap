@@ -196,13 +196,13 @@ export class ControllerMethodBuilder extends BasicMethodBuilder {
 		return super.implementation(impl) as ControllerMethodBuilder;
 	}
 
-	public nickname(nickname: string): ControllerMethodBuilder {
-		return super.annotation(`ApiOperation(nickname = "${nickname}")`) as ControllerMethodBuilder;
+	public nickname(value: string, nickname: string): ControllerMethodBuilder {
+		return super.annotation(`ApiOperation(value = "${value}", nickname = "${nickname}")`) as ControllerMethodBuilder;
 	}
 
 	public defaultNickname(): ControllerMethodBuilder {
 		super.validate();
-		return super.annotation(`ApiOperation(nickname = "${this.instance.name}")`) as ControllerMethodBuilder;
+		return this.nickname("", this.instance.name) as ControllerMethodBuilder;
 	}
 
 	build(): Method {

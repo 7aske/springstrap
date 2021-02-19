@@ -7,7 +7,6 @@ import { parseDDL, parseEnums } from "./parser";
 import Repository from "./repository";
 import Service from "./service";
 import ServiceImpl from "./serviceimpl";
-import { isMtmTable } from "./utils";
 import Auditable from "./auditable";
 import AuditorAware from "./auditoraware";
 import Swagger from "./swagger";
@@ -104,7 +103,7 @@ const enums = options.enums ? parseEnums(options.enums) : [];
 let jsonDDL = parseDDL(sql, program.type);
 let relations: DDLManyToMany[] = [];
 jsonDDL.forEach(tableDef => {
-	if (!isMtmTable(tableDef)) return;
+	if (!Entity.isMtmTable(tableDef)) return;
 	if (!tableDef.foreignKeys || tableDef.foreignKeys.length !== 2) return;
 
 	const fk1 = tableDef.foreignKeys[0];
@@ -154,7 +153,7 @@ jsonDDL.forEach(tableDef => {
 		// TODO: possibly extract as a filter
 		const isIgnored = (options.ignore as string).split(",").some(ignore => ignore === tableDef.name);
 		if (isIgnored) return;
-		if (isMtmTable(tableDef)) return;
+		if (Entity.isMtmTable(tableDef)) return;
 
 		const manyToMany = relations.filter(rel => rel.source === tableDef.name);
 		const entityEnums = enums.filter(e => e.tables.some(t => t === tableDef.name));

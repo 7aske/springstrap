@@ -26,17 +26,6 @@ export const plural = (str: string) => {
 };
 
 /**
- * Checks if the provided table's sole purpose is to provide a many-to-many relationship
- * fk_count = pk_count = col_count
- * @param table
- */
-export const isMtmTable = (table: DDLTable): boolean => {
-	return table.foreignKeys !== undefined && table.primaryKey !== undefined &&
-		table.columns.length === table.foreignKeys.length &&
-		table.primaryKey.columns.length === table.foreignKeys.length;
-};
-
-/**
  * Checks if the provided table has a composite primary key
  * @param table
  */

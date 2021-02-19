@@ -74,8 +74,12 @@ export default class Entity extends JavaClass {
 		return this._id;
 	}
 
-	public get idArgs(): string {
-		return this.id.map(pk => `${pk.javaType} ${pk.varName}`).join(", ");
+	public get idArgs(): string[][] {
+		return this.id.map(pk => [pk.javaType, pk.varName])
+	}
+
+	public get idArgsString(): string {
+		return this.idArgs.map(id => id.join(" ")).join(", ");
 	}
 
 	public get idVars(): string {

@@ -19,7 +19,9 @@
 		],
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
-		"resolveJsonModule": true
+		"resolveJsonModule": true,
+		"strictPropertyInitialization": false,
+		"experimentalDecorators": true
 	},
 	"exclude": [
 		"test/**/*"

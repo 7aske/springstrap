@@ -1,7 +1,7 @@
-import { DEFAULT_SSOPT, uncapitalize, formatImports, formatAnnotations, plural, capitalize } from "./utils";
+import { uncapitalize, formatImports, formatAnnotations, plural, list } from "./utils";
 import Service from "./service";
 import JavaClass from "./def/JavaClass";
-import entity from "./entity";
+import { ControllerMethodBuilder } from "./methodBuilder";
 
 export default class Controller extends JavaClass {
 	private readonly _service: Service;
@@ -11,7 +11,7 @@ export default class Controller extends JavaClass {
 	constructor(service: Service, domain: string, options?: SpringStrapOptions) {
 		super(domain, "controller", options);
 		this._service = service;
-		this._className = service.entity.className + "Controller"
+		this._className = service.entity.className + "Controller";
 		this._endpoint = plural(this._service.entity.tableName.replace("_", "-"));
 	}
 
@@ -51,14 +51,19 @@ export default class Controller extends JavaClass {
 			"RequiredArgsConstructor",
 		];
 
+		const swaggerAnnotations = [
+			"io.swagger.annotations.ApiOperation",
+		];
+
 		const services = [
-			`${serviceName} ${serviceVarName}`
+			`${serviceName} ${serviceVarName}`,
 		];
 
 		if (this.options.lombok) imports.push(...lombokImports);
 		if (!this.options.lombok) imports.push(...noLombokImports);
 		if (this.options.lombok) annotations.push(...lombokAnnotations);
-		if (this._service.entity.enums.length > 0) imports.push(`${domain ? domain + "." : ""}entity.domain.*`)
+		if (this.options.swagger) imports.push(...swaggerAnnotations);
+		if (this._service.entity.enums.length > 0) imports.push(`${domain ? domain + "." : ""}entity.domain.*`);
 
 		let out = `package ${this.package};\n\n`;
 		out += formatImports(imports);
@@ -72,74 +77,101 @@ export default class Controller extends JavaClass {
 				out += `\t@Autowired\n\tprivate ${service};\n\n`;
 		});
 
-		out += `\t@GetMapping\n`;
-		out += `\tpublic ResponseEntity<List<${ent.className}>> getAll() {\n`;
-		out += `\t\treturn ResponseEntity.ok(${serviceVarName}.findAll());\n`;
-		out += `\t}\n\n`;
+		out += this.getMethodBuilder("getAll")
+			.getMapping()
+			.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll());\n`)
+			.return(list(ent.className))
+			.build()
+			.generate();
 
-		out += `\t@GetMapping("/${ent.idPathVars}")\n`;
-		out += `\tpublic ResponseEntity<${ent.className}> getById(${ent.idPathArgs}) {\n`;
-		out += `\t\treturn ResponseEntity.ok(${serviceVarName}.findById(${ent.idVars}));\n`;
-		out += `\t}\n\n`;
+		out += this.getMethodBuilder("getById")
+			.getMapping(ent.idPathVars)
+			.pathVariables(ent.idArgs)
+			.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findById(${ent.idPathArgs}));\n`)
+			.return(ent.className)
+			.build()
+			.generate();
 
-		out += `\t@PostMapping\n`;
-		out += `\tpublic ResponseEntity<${ent.className}> save(@RequestBody ${ent.className} ${ent.varName}) {\n`;
-		out += `\t\treturn ResponseEntity.status(201).body(${serviceVarName}.save(${ent.varName}));\n`;
-		out += `\t}\n\n`;
+		out += this.getMethodBuilder("save")
+			.postMapping()
+			.requestBody([[ent.className, ent.varName]])
+			.implementation(`\treturn ResponseEntity.status(201).body(${serviceVarName}.save(${ent.varName}));\n`)
+			.return(ent.className)
+			.build()
+			.generate();
 
-		out += `\t@PutMapping\n`;
-		out += `\tpublic ResponseEntity<${ent.className}> update(@RequestBody ${ent.className} ${ent.varName}) {\n`;
-		out += `\t\treturn ResponseEntity.ok(${serviceVarName}.update(${ent.varName}));\n`;
-		out += `\t}\n\n`;
+		out += this.getMethodBuilder("update")
+			.putMapping()
+			.requestBody([[ent.className, ent.varName]])
+			.implementation(`\treturn ResponseEntity.status(201).body(${serviceVarName}.save(${ent.varName}));\n`)
+			.return(ent.className)
+			.build()
+			.generate();
 
-		// if (ent.id.length === 1){
-		// 	out += `\t@PutMapping("/${ent.idPathVars}")\n`;
-		// 	out += `\tpublic ResponseEntity<${ent.className}> updateById(@RequestBody ${ent.className} ${ent.varName}, ${ent.idPathArgs}) {\n`;
-		// 	ent.id.forEach(pk => {
-		// 		out += `\t\t${ent.varName}.setId(${pk.varName});\n`;
-		// 	});
-		// 	out += `\t\treturn ResponseEntity.ok(${serviceVarName}.update(${ent.varName}));\n`;
-		// 	out += `\t}\n\n`;
-		// }
-
-		out += `\t@DeleteMapping("/${ent.idPathVars}")\n`;
-		out += `\tpublic void deleteById(${ent.idPathArgs}) {\n`;
-		out += `\t\t${serviceVarName}.deleteById(${ent.idVars});\n`;
-		out += `\t}\n\n`;
+		out += this.getMethodBuilder("deleteById")
+			.deleteMapping()
+			.pathVariables(ent.idArgs)
+			.implementation(`\t${serviceVarName}.deleteById(${ent.idVars});\n`)
+			.build()
+			.generate();
 
 		ent.mtmColumns.forEach(col => {
 			const listName = plural(col.target.replace("_", "-"));
-			out += `\t@GetMapping("/${ent.idPathVars}/${listName}")\n`;
-			out += `\tpublic ResponseEntity<List<${col.targetClassName}>> get${plural(col.targetClassName)}(${ent.idPathArgs}) {\n`;
-			out += `\t\treturn ResponseEntity.ok(${serviceVarName}.findAll${plural(col.targetClassName)}ById(${ent.idVars}));\n`;
-			out += `\t}\n\n`;
 
-			out += `\t@PostMapping("/${ent.idPathVars}/${listName}")\n`;
-			out += `\tpublic ResponseEntity<List<${col.targetClassName}>> set${plural(col.targetClassName)}(${ent.idPathArgs}, @RequestBody List<${col.targetClassName}> ${col.targetVarName}) {\n`;
-			out += `\t\treturn ResponseEntity.ok(${serviceVarName}.set${plural(col.targetClassName)}ById(${ent.idVars}, ${col.targetVarName}));\n`;
-			out += `\t}\n\n`;
+			out += this.getMethodBuilder(`get${plural(col.targetClassName)}`)
+				.getMapping(`${ent.idPathVars}/${listName}`)
+				.pathVariables(ent.idArgs)
+				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll${plural(col.targetClassName)}ById(${ent.idVars}));\n`)
+				.return(list(col.targetClassName))
+				.build()
+				.generate();
 
-			out += `\t@PutMapping("/${ent.idPathVars}/${listName}")\n`;
-			out += `\tpublic ResponseEntity<List<${col.targetClassName}>> add${plural(col.targetClassName)}(${ent.idPathArgs}, @RequestBody List<${col.targetClassName}> ${col.targetVarName}) {\n`;
-			out += `\t\treturn ResponseEntity.ok(${serviceVarName}.add${plural(col.targetClassName)}ById(${ent.idVars}, ${col.targetVarName}));\n`;
-			out += `\t}\n\n`;
+			out += this.getMethodBuilder(`set${plural(col.targetClassName)}`)
+				.postMapping(`${ent.idPathVars}/${listName}`)
+				.pathVariables(ent.idArgs)
+				.requestBody([[list(col.targetClassName), col.targetVarName]])
+				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.set${plural(col.targetClassName)}ById(${ent.idVars}));\n`)
+				.return(list(col.targetClassName))
+				.build()
+				.generate();
 
-			out += `\t@DeleteMapping("/${ent.idPathVars}/${listName}")\n`;
-			out += `\tpublic ResponseEntity<List<${col.targetClassName}>> delete${plural(col.targetClassName)}(${ent.idPathArgs}, @RequestBody List<${col.targetClassName}> ${col.targetVarName}) {\n`;
-			out += `\t\treturn ResponseEntity.ok(${serviceVarName}.delete${plural(col.targetClassName)}ById(${ent.idVars}, ${col.targetVarName}));\n`;
-			out += `\t}\n\n`;
+			out += this.getMethodBuilder(`set${plural(col.targetClassName)}`)
+				.putMapping(`${ent.idPathVars}/${listName}`)
+				.pathVariables(ent.idArgs)
+				.requestBody([[list(col.targetClassName), col.targetVarName]])
+				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.add${plural(col.targetClassName)}ById(${ent.idVars}));\n`)
+				.return(list(col.targetClassName))
+				.build()
+				.generate();
+
+			out += this.getMethodBuilder(`set${plural(col.targetClassName)}`)
+				.putMapping(`${ent.idPathVars}/${listName}`)
+				.pathVariables(ent.idArgs)
+				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.delete${plural(col.targetClassName)}ById(${ent.idVars}));\n`)
+				.return(list(col.targetClassName))
+				.build()
+				.generate();
 		});
 
 		this._service.entity.enums.forEach(e => {
-			out += `\t@GetMapping("/${plural(uncapitalize(e.className))}")\n`;
-			out += `\tpublic ResponseEntity<Object[]> get${e.className}() {\n`;
-			out += `\t\treturn ResponseEntity.ok(${e.className}.values());\n`;
-			out += `\t}\n\n`;
-		})
+			out += this.getMethodBuilder(`get${e.className}`)
+				.getMapping(plural(uncapitalize(e.className)))
+				.implementation(`\treturn ResponseEntity.ok(${e.className}.values());\n`)
+				.return("Object[]")
+				.build()
+				.generate();
+		});
 
 		out += "}\n\n";
 
 		return out;
+	}
+
+	private getMethodBuilder(name?: string) {
+		const retval = new ControllerMethodBuilder();
+		if (this.options.swagger && name)
+			return retval.name(name).defaultNickname();
+		return retval;
 	}
 
 	public get endpoint(): string {

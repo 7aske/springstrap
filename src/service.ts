@@ -27,13 +27,13 @@ export default class Service extends JavaClass{
 		code += `\tList<${ent.className}> findAll();\n\n`;
 		code += `\t${ent.className} save(${ent.className} ${ent.varName});\n\n`;
 		code += `\t${ent.className} update(${ent.className} ${ent.varName});\n\n`;
-		code += `\t${ent.className} findById(${ent.idArgs});\n`;
-		code += `\n\tvoid deleteById(${ent.idArgs});\n`;
+		code += `\t${ent.className} findById(${ent.idArgsString});\n`;
+		code += `\n\tvoid deleteById(${ent.idArgsString});\n`;
 		this.entity.mtmColumns.forEach(col => {
-			code += `\n\tList<${col.targetClassName}> findAll${plural(col.targetClassName)}ById(${ent.idArgs});\n`;
-			code += `\n\tList<${col.targetClassName}> add${plural(col.targetClassName)}ById(${ent.idArgs}, List<${col.targetClassName}> ${col.targetVarName});\n`;
-			code += `\n\tList<${col.targetClassName}> set${plural(col.targetClassName)}ById(${ent.idArgs}, List<${col.targetClassName}> ${col.targetVarName});\n`;
-			code += `\n\tList<${col.targetClassName}> delete${plural(col.targetClassName)}ById(${ent.idArgs}, List<${col.targetClassName}> ${col.targetVarName});\n`;
+			code += `\n\tList<${col.targetClassName}> findAll${plural(col.targetClassName)}ById(${ent.idArgsString});\n`;
+			code += `\n\tList<${col.targetClassName}> add${plural(col.targetClassName)}ById(${ent.idArgsString}, List<${col.targetClassName}> ${col.targetVarName});\n`;
+			code += `\n\tList<${col.targetClassName}> set${plural(col.targetClassName)}ById(${ent.idArgsString}, List<${col.targetClassName}> ${col.targetVarName});\n`;
+			code += `\n\tList<${col.targetClassName}> delete${plural(col.targetClassName)}ById(${ent.idArgsString}, List<${col.targetClassName}> ${col.targetVarName});\n`;
 		});
 
 		return this.wrap(code);

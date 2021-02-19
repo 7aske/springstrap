@@ -93,3 +93,5 @@ export const fold = (str: string, len = 80): string => {
 	return out;
 };
 
+export const response = (str: string) => `ResponseEntity<${str}>`;
+export const list = (str: string) => `List<${str}>`;

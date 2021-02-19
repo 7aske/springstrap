@@ -117,7 +117,7 @@ export default class Controller extends JavaClass {
 			.generate();
 
 		ent.mtmColumns.forEach(col => {
-			const listName = plural(col.target.replace("_", "-"));
+			const listName = plural(col.target.replace(/_/g, "-"));
 
 			out += this.getMethodBuilder(`get${ent.className}${plural(col.targetClassName)}`)
 				.getMapping(`${ent.idPathVars}/${listName}`)

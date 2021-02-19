@@ -191,10 +191,10 @@ const auditorAwareFilename = join(configDir, auditorAware.fileName);
 const swaggerFilename = join(configDir, swagger.fileName);
 const configFilename = join(configDir, config.fileName);
 // @formatter:off
-if ((!fs.existsSync(auditableFilename)    || options.overwrite) && options.auditable) fs.writeFileSync(auditableFilename, auditable.code);
-if ((!fs.existsSync(auditorAwareFilename) || options.overwrite) && options.auditable) fs.writeFileSync(auditorAwareFilename, auditorAware.code);
-if ((!fs.existsSync(swaggerFilename)      || options.overwrite) && options.swagger)   fs.writeFileSync(swaggerFilename, swagger.code);
-if ((!fs.existsSync(configFilename)       || options.overwrite) && options.auditable) fs.writeFileSync(configFilename, config.code);
+if (!fs.existsSync(auditableFilename)    && options.auditable) fs.writeFileSync(auditableFilename, auditable.code);
+if (!fs.existsSync(auditorAwareFilename) && options.auditable) fs.writeFileSync(auditorAwareFilename, auditorAware.code);
+if (!fs.existsSync(swaggerFilename)      && options.swagger)   fs.writeFileSync(swaggerFilename, swagger.code);
+if (!fs.existsSync(configFilename)       && options.auditable) fs.writeFileSync(configFilename, config.code);
 // @formatter:on
 enums.map(e => new Enum(options.domain, e, options)).forEach(e => {
 	const enumFilename = join(entityDir, "domain", e.className + ".java");

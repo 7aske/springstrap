@@ -7,15 +7,18 @@ export default class Service extends JavaClass{
 	private readonly _entity: Entity;
 	private readonly _className: string;
 
-	constructor(entity: Entity, domain: string) {
-		super(domain, "service");
+	constructor(entity: Entity, options: SpringStrapOptions) {
+		super(options.domain, "service", options);
 		super.imports= [
-			`${domain}.entity.*`,
+			`${options.domain}.entity.*`,
 			`java.util.List`,
 			`java.util.Collection`,
 		]
-		super.type = "interface";
 
+		if (this.options.specification)
+			super.imports.push("org.springframework.data.jpa.domain.Specification")
+
+		super.type = "interface";
 		this._className = entity.className + "Service";
 		this._entity = entity;
 	}
@@ -24,7 +27,10 @@ export default class Service extends JavaClass{
 		const ent = this._entity;
 
 		let code = "\n";
-		code += `\tList<${ent.className}> findAll();\n\n`;
+		if (this.options.specification)
+			code += `\tList<${ent.className}> findAll(Specification<${ent.className}> specification);\n\n`;
+		else
+			code += `\tList<${ent.className}> findAll();\n\n`;
 		code += `\t${ent.className} save(${ent.className} ${ent.varName});\n\n`;
 		code += `\t${ent.className} update(${ent.className} ${ent.varName});\n\n`;
 		code += `\t${ent.className} findById(${ent.idArgsString});\n`;

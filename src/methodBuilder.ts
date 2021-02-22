@@ -139,6 +139,10 @@ export class ControllerMethodBuilder extends BasicMethodBuilder {
 		return super.args(args) as ControllerMethodBuilder;
 	}
 
+	public requestParam(args: string[][]): ControllerMethodBuilder {
+		return super.args(args) as ControllerMethodBuilder;
+	}
+
 	public getMapping(path?: string): ControllerMethodBuilder {
 		return this.mapping("get", path);
 	}

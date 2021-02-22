@@ -2,6 +2,7 @@ import { snakeToCamel, DEFAULT_SSOPT, plural, uncapitalize } from "./utils";
 import Service from "./service";
 import JavaClass from "./def/JavaClass";
 import Repository from "./repository";
+import { BasicMethodBuilder } from "./methodBuilder";
 
 export default class ServiceImpl extends JavaClass {
 	private readonly _service: Service;
@@ -30,6 +31,9 @@ export default class ServiceImpl extends JavaClass {
 		const noLombokImports = [
 			"org.springframework.beans.factory.annotation.Autowired",
 		];
+
+		if (this.options.specification) super.imports.push("org.springframework.data.jpa.domain.Specification")
+
 		super.auditable = false;
 		if (this.options.lombok) super.annotations.push(...lombokAnnotations);
 		if (!this.options.lombok) super.imports.push(...noLombokImports);
@@ -65,10 +69,18 @@ export default class ServiceImpl extends JavaClass {
 			code += `\tprivate ${this.repository.className} ${this._repository.varName};\n\n`;
 		}
 
-		code += "\t@Override\n";
-		code += `\tpublic List<${ent.className}> findAll() {\n`;
-		code += `\t\treturn ${ent.varName}Repository.findAll();\n`;
-		code += "\t}\n\n";
+		if (this.options.specification) {
+			code += "\t@Override\n";
+			code += `\tpublic List<${ent.className}> findAll(Specification<${ent.className}> specification) {\n`;
+			code += `\t\treturn ${ent.varName}Repository.findAll(specification);\n`;
+			code += "\t}\n\n";
+		} else {
+			code += "\t@Override\n";
+			code += `\tpublic List<${ent.className}> findAll() {\n`;
+			code += `\t\treturn ${ent.varName}Repository.findAll();\n`;
+			code += "\t}\n\n";
+		}
+
 
 		code += "\t@Override\n";
 		code += `\tpublic ${ent.className} findById(${ent.idArgsString}) {\n`;

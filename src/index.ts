@@ -34,6 +34,7 @@ program
 	.option("-l, --lombok", "use lombok")
 	.option("-a, --auditable", "entities extend 'Auditable'")
 	.option("-s, --swagger", "add basic Swagger config class")
+	.option("-p, --specification", "adds JPA specification api based controller endpoints")
 	.option("-e, --enums <enumfile>", "load enum definitions from a json file")
 	.option("--ignore <ignore>", "ignore selected tables", "")
 	.option("--tables <tables>", "generated only listed tables", "")
@@ -74,6 +75,7 @@ const options: SpringStrapOptions = {
 	swagger: program.swagger,
 	tables: program.tables,
 	type: program.type,
+	specification: program.specification
 };
 
 if (program.all) {
@@ -159,8 +161,8 @@ jsonDDL.forEach(tableDef => {
 		const entityEnums = enums.filter(e => e.tables.some(t => t === tableDef.name));
 
 		const entity = new Entity(tableDef, options.domain, manyToMany, entityEnums, options);
-		const repository = new Repository(entity, options.domain);
-		const service = new Service(entity, options.domain);
+		const repository = new Repository(entity, options);
+		const service = new Service(entity, options);
 		const serviceImpl = new ServiceImpl(service, repository, options.domain, options);
 		const controller = new Controller(service, options.domain, options);
 

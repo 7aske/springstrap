@@ -64,6 +64,7 @@ export default class Controller extends JavaClass {
 		if (!this.options.lombok) imports.push(...noLombokImports);
 		if (this.options.lombok) annotations.push(...lombokAnnotations);
 		if (this.options.swagger) imports.push(...swaggerAnnotations);
+		if (this.options.specification) imports.push("org.springframework.data.jpa.domain.Specification")
 		if (this._service.entity.enums.length > 0) imports.push(`${domain ? domain + "." : ""}entity.domain.*`);
 
 		let out = `package ${this.package};\n\n`;
@@ -80,7 +81,8 @@ export default class Controller extends JavaClass {
 
 		out += this.getMethodBuilder(`getAll${plural(ent.className)}`)
 			.getMapping()
-			.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll());\n`)
+			.requestParam([[`@RequestParam(name = "q", required = false)`, `Specification<${ent.className}>`, "specification"]])
+			.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll(specification));\n`)
 			.return(list(ent.className))
 			.build()
 			.generate();

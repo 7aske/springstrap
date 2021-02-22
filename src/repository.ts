@@ -6,12 +6,12 @@ export default class Repository extends JavaClass {
 	private readonly _entity: Entity;
 	private readonly _className: string;
 
-	constructor(entity: Entity, domain: string) {
-		super(domain, "repository");
+	constructor(entity: Entity, options: SpringStrapOptions = {domain: ""}) {
+		super(options.domain, "repository");
 		super.imports = [
-			"org.springframework.data.jpa.repository.JpaRepository",
+			"org.springframework.data.jpa.repository.*",
 			"org.springframework.stereotype.Repository",
-			`${domain ? domain + "." : ""}entity.${entity.className}`,
+			`${options.domain ? options.domain + "." : ""}entity.${entity.className}`,
 		];
 		super.annotations = [
 			"Repository",
@@ -21,6 +21,10 @@ export default class Repository extends JavaClass {
 		]
 		super.type = "interface";
 		super.lombok = true;
+
+		if (options.specification) {
+			super.superClasses.push(`JpaSpecificationExecutor<${entity.className}>`)
+		}
 
 		this._entity = entity;
 		this._className = entity.className + "Repository";

@@ -5,7 +5,7 @@
 	"main": "src/index.js",
 	"scripts": {
 		"build": "tsc && webpack",
-		"build:install": "cp scripts/springstrap.sh ~/.local/bin/springstrap"
+		"build:install": "scripts/install.sh"
 	},
 	"keywords": [],
 	"author": "",

@@ -64,7 +64,7 @@ export default class Controller extends JavaClass {
 		if (!this.options.lombok) imports.push(...noLombokImports);
 		if (this.options.lombok) annotations.push(...lombokAnnotations);
 		if (this.options.swagger) imports.push(...swaggerAnnotations);
-		if (this.options.specification) imports.push("org.springframework.data.jpa.domain.Specification")
+		if (this.options.specification) imports.push("org.springframework.data.jpa.domain.Specification");
 		if (this._service.entity.enums.length > 0) imports.push(`${domain ? domain + "." : ""}entity.domain.*`);
 
 		let out = `package ${this.package};\n\n`;
@@ -79,11 +79,18 @@ export default class Controller extends JavaClass {
 				out += `\t@Autowired\n\tprivate ${service};\n\n`;
 		});
 
-		out += this.getMethodBuilder(`getAll${plural(ent.className)}`)
-			.getMapping()
-			.requestParam([[`@RequestParam(name = "q", required = false)`, `Specification<${ent.className}>`, "specification"]])
-			.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll(specification));\n`)
-			.return(list(ent.className))
+		const getAll = this.getMethodBuilder(`getAll${plural(ent.className)}`)
+			.getMapping();
+		if (this.options.specification) {
+			getAll
+				.requestParam([[`@RequestParam(name = "q", required = false)`, `Specification<${ent.className}>`, "specification"]])
+				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll(specification));\n`);
+		} else {
+			getAll
+				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll());\n`);
+		}
+
+		out += getAll.return(list(ent.className))
 			.build()
 			.generate();
 

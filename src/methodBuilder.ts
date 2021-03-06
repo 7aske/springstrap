@@ -1,7 +1,6 @@
 import { response, capitalize } from "./utils";
 import Method from "./method";
 import { FieldVisibility } from "./@types/method/Visibility";
-import Controller from "./controller";
 
 export interface MethodBuilder {
 
@@ -94,7 +93,6 @@ export class BasicMethodBuilder implements MethodBuilder {
 	}
 
 	public build(): Method {
-		this.validate();
 		return BasicMethodBuilder.clone(this.instance);
 	}
 

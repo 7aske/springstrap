@@ -93,6 +93,7 @@ export class BasicMethodBuilder implements MethodBuilder {
 	}
 
 	public build(): Method {
+		this.validate();
 		return BasicMethodBuilder.clone(this.instance);
 	}
 

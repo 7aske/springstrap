@@ -171,10 +171,11 @@ export default class Controller extends JavaClass {
 		return out;
 	}
 
-	private getMethodBuilder(name?: string) {
-		const retval = new ControllerMethodBuilder();
-		if (this.options.swagger && name)
-			return retval.name(name).defaultNickname();
+	private getMethodBuilder(name: string) {
+		const retval = new ControllerMethodBuilder()
+			.name(name);
+		if (this.options.swagger)
+			return retval.defaultNickname();
 		return retval;
 	}
 

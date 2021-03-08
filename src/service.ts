@@ -17,6 +17,7 @@ export default class Service extends JavaClass{
 
 		if (this.options.specification)
 			super.imports.push("org.springframework.data.jpa.domain.Specification")
+		if (this.options.sort) this.imports.push("org.springframework.data.domain.Sort");
 
 		super.type = "interface";
 		this._className = entity.className + "Service";
@@ -27,7 +28,9 @@ export default class Service extends JavaClass{
 		const ent = this._entity;
 
 		let code = "\n";
-		if (this.options.specification)
+		if (this.options.specification && this.options.sort)
+			code += `\tList<${ent.className}> findAll(Specification<${ent.className}> specification, Sort sort);\n\n`;
+		else if (this.options.specification)
 			code += `\tList<${ent.className}> findAll(Specification<${ent.className}> specification);\n\n`;
 		else
 			code += `\tList<${ent.className}> findAll();\n\n`;

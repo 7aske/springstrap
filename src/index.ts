@@ -35,6 +35,7 @@ program
 	.option("-a, --auditable", "entities extend 'Auditable'")
 	.option("-s, --swagger", "add basic Swagger config class")
 	.option("-p, --specification", "adds JPA specification api based controller endpoints")
+	.option("-r, --sort", "adds sort to controller endpoints")
 	.option("-e, --enums <enumfile>", "load enum definitions from a json file")
 	.option("--ignore <ignore>", "ignore selected tables", "")
 	.option("--tables <tables>", "generated only listed tables", "")
@@ -75,7 +76,8 @@ const options: SpringStrapOptions = {
 	swagger: program.swagger,
 	tables: program.tables,
 	type: program.type,
-	specification: program.specification
+	specification: program.specification,
+	sort: program.sort
 };
 
 if (program.all) {

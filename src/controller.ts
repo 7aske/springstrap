@@ -64,6 +64,7 @@ export default class Controller extends JavaClass {
 		if (!this.options.lombok) imports.push(...noLombokImports);
 		if (this.options.lombok) annotations.push(...lombokAnnotations);
 		if (this.options.swagger) imports.push(...swaggerAnnotations);
+		if (this.options.sort) imports.push("org.springframework.data.domain.Sort");
 		if (this.options.specification) imports.push("org.springframework.data.jpa.domain.Specification");
 		if (this._service.entity.enums.length > 0) imports.push(`${domain ? domain + "." : ""}entity.domain.*`);
 
@@ -81,7 +82,12 @@ export default class Controller extends JavaClass {
 
 		const getAll = this.getMethodBuilder(`getAll${plural(ent.className)}`)
 			.getMapping();
-		if (this.options.specification) {
+		if (this.options.specification && this.options.sort) {
+			getAll
+				.requestParam([[`@RequestParam(name = "q", required = false)`, `Specification<${ent.className}>`, "specification"],
+				[`@RequestParam(name = "sort", required = false)`, "Sort", "sort"]])
+				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll(specification, sort));\n`);
+		} else if (this.options.specification) {
 			getAll
 				.requestParam([[`@RequestParam(name = "q", required = false)`, `Specification<${ent.className}>`, "specification"]])
 				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll(specification));\n`);

@@ -68,8 +68,12 @@ export default class ServiceImpl extends JavaClass {
 			code += "\t@Autowired\n";
 			code += `\tprivate ${this.repository.className} ${this._repository.varName};\n\n`;
 		}
-
-		if (this.options.specification) {
+		if (this.options.specification && this.options.sort) {
+			code += "\t@Override\n";
+			code += `\tpublic List<${ent.className}> findAll(Specification<${ent.className}> specification, Sort sort) {\n`;
+			code += `\t\treturn ${ent.varName}Repository.findAll(specification, sort == null ? Sort.unsorted() : sort);\n`;
+			code += "\t}\n\n";
+		} else if (this.options.specification) {
 			code += "\t@Override\n";
 			code += `\tpublic List<${ent.className}> findAll(Specification<${ent.className}> specification) {\n`;
 			code += `\t\treturn ${ent.varName}Repository.findAll(specification);\n`;

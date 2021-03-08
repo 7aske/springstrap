@@ -15,4 +15,5 @@ declare interface SpringStrapOptions {
 	swagger?: boolean;
 	enums?: string;
 	specification?: boolean;
+	sort?: boolean;
 }

@@ -2,7 +2,6 @@ import { snakeToCamel, DEFAULT_SSOPT, plural, uncapitalize } from "./utils";
 import Service from "./service";
 import JavaClass from "./def/JavaClass";
 import Repository from "./repository";
-import { BasicMethodBuilder } from "./methodBuilder";
 
 export default class ServiceImpl extends JavaClass {
 	private readonly _service: Service;
@@ -33,6 +32,7 @@ export default class ServiceImpl extends JavaClass {
 		];
 
 		if (this.options.specification) super.imports.push("org.springframework.data.jpa.domain.Specification")
+		if (this.options.sort) super.imports.push("org.springframework.data.domain.Sort");
 
 		super.auditable = false;
 		if (this.options.lombok) super.annotations.push(...lombokAnnotations);

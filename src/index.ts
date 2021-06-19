@@ -172,7 +172,7 @@ jsonDDL.forEach(tableDef => {
 		const repositoryFilename = join(repositoryDir, repository.fileName);
 		const serviceFilename = join(serviceDir, service.fileName);
 		const serviceImplFilename = join(serviceImplDir, serviceImpl.fileName);
-		const controllerFilename = join(controllerDir, entity.className + "Controller.java");
+		const controllerFilename = join(controllerDir, controller.fileName);
 		// @formatter:off
 		if ((!fs.existsSync(entityFilename)        || options.overwrite) && options.entity)      fs.writeFileSync(entityFilename, entity.code);
 		if ((!fs.existsSync(repositoryFilename)    || options.overwrite) && options.repository)  fs.writeFileSync(repositoryFilename, repository.code);

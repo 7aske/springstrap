@@ -195,4 +195,8 @@ export default class Controller extends JavaClass {
 	public get endpoint(): string {
 		return this._endpoint;
 	}
+
+	public get fileName(): string {
+		return `${this.className}.java`;
+	}
 }

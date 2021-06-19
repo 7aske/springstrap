@@ -11,10 +11,10 @@ export default abstract class JavaClass {
 	private _type: ClassType = "class";
 	private _comment?: string = undefined;
 	private _abstract: boolean = false;
-	private static readonly LOMBOK_IMPORTS = [
+	protected static readonly LOMBOK_IMPORTS = [
 		"lombok.*",
 	];
-	private static readonly LOMBOK_ANNOTATIONS = [
+	protected static readonly LOMBOK_ANNOTATIONS = [
 		"Data",
 		`EqualsAndHashCode(callSuper = false, onlyExplicitlyIncluded = true)`,
 		"NoArgsConstructor",
@@ -43,25 +43,23 @@ export default abstract class JavaClass {
 	public abstract get varName(): string;
 
 	protected wrap(classImpl: string = "", attr = ""): string {
-		if (this.options.lombok && this._type !== "interface") {
-			this._imports.push(...JavaClass.LOMBOK_IMPORTS);
-			this._annotations.push(...JavaClass.LOMBOK_ANNOTATIONS);
-		}
 		if (this.options.auditable && this._type !== "interface") {
 			this._interfaces.splice(this._interfaces.indexOf("Serializable"), 1);
 			this._imports.splice(this._imports.indexOf("java.io.Serializable"), 1);
 			this._superClasses.push("Auditable");
 		}
 		if (this.annotations.indexOf("RequiredArgsConstructor") !== -1) {
-			this.annotations.splice(this.annotations.indexOf("NoArgsConstructor"), 1);
+			const noArgsConstructorIndex = this.annotations.indexOf("NoArgsConstructor");
+			if (noArgsConstructorIndex !== -1) {
+				this.annotations.splice(noArgsConstructorIndex, 1);
+			}
 		}
-
 		let out = `package ${this.package};\n\n`;
 		out += JavaClass.formatImports(this._imports);
-		if (this.comment){
+		if (this.comment) {
 			out += "/**\n";
-			out += `${fold(this.comment).split("\n").map(line => ` * ${line}\n`).join("")}`
-			 out += " */\n";
+			out += `${fold(this.comment).split("\n").map(line => ` * ${line}\n`).join("")}`;
+			out += " */\n";
 		}
 
 		out += JavaClass.formatAnnotations(this._annotations);
@@ -71,7 +69,7 @@ export default abstract class JavaClass {
 		out += ` {\n`;
 		out += attr;
 		if (!this._options.lombok) {
-			if (this.type === "enum"){
+			if (this.type === "enum") {
 				out += "\n\tprivate final String name;\n";
 				out += `\n\t${this.className}(String name) {\n\t\tthis.name = name;\n\t}\n`;
 				out += `\n\tpublic String getName() {\n\t\treturn name;\n\t}\n`;

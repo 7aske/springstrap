@@ -36,7 +36,10 @@ export default class Entity extends JavaClass {
 		super.interfaces = [
 			"Serializable",
 		];
-
+		if (this.options.lombok) {
+			this.imports.push(...JavaClass.LOMBOK_IMPORTS);
+			this.annotations.push(...JavaClass.LOMBOK_ANNOTATIONS);
+		}
 		if (options) {
 			super.comment = options.comment;
 		}

@@ -1,7 +1,6 @@
-const Parser = require("sql-ddl-to-json-schema");
-const fs = require("fs");
+import { Parser } from "sql-ddl-to-json-schema";
 
-export const parseDDL = (sql: string, type: string): DDLTable[] => {
+export const parseDDL = (sql: string, type: "mysql" | "mariadb"): DDLTable[] => {
 	const parser = new Parser(type);
 
 	sql = sql.replace(/^--.*$/mg, "");
@@ -23,7 +22,3 @@ export const parseDDL = (sql: string, type: string): DDLTable[] => {
 	const parsedJsonFormat = parser.results;
 	return parser.toCompactJson(parsedJsonFormat) as DDLTable[];
 };
-
-export const parseEnums = (filepath: string): EnumType[] =>{
-	return JSON.parse(fs.readFileSync(filepath).toString()).enums;
-}

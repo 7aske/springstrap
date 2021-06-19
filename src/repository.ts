@@ -46,6 +46,3 @@ export default class Repository extends JavaClass {
 		return this._entity;
 	}
 }
-
-
-module.exports = Repository;

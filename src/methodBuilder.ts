@@ -1,6 +1,6 @@
 import { response, capitalize } from "./utils";
 import Method from "./method";
-import { FieldVisibility } from "./@types/method/Visibility";
+import FieldVisibility from "./Visbility";
 
 export interface MethodBuilder {
 
@@ -16,7 +16,7 @@ export interface MethodBuilder {
 
 	name(name: string): MethodBuilder;
 
-	visibility(vis: FieldVisibility): MethodBuilder;
+	visibility(vis: any): MethodBuilder;
 
 	public(): MethodBuilder;
 

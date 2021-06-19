@@ -1,4 +1,3 @@
-import program from "commander";
 import { parseDDL } from "./parser";
 import Entity from "./entity";
 import Repository from "./repository";
@@ -16,68 +15,12 @@ function join(...parts: string[]) {
 	return parts.join(sep).replace(replace, sep);
 }
 
-let filename = "";
-
-const run = (...args: string[]) => {
-	program
-		.arguments("<ddl_file.sql>")
-		.action(function (cmd: string) {
-			filename = cmd;
-		})
-		.option("-t, --type <mariadb|mysql>", "database type")
-		.option("-o, --output <filepath>", "output root path")
-		.option("-d, --domain <domain>", "your app domain (eg. 'com.example.com')", "")
-		.option("-w, --overwrite", "overwrite existing files")
-		.option("-E, --entity", "generate entities")
-		.option("-S, --service", "generate services")
-		.option("-I, --serviceimpl", "generate service implementations")
-		.option("-C, --controller", "generate controllers")
-		.option("-R, --repository", "generate repositories")
-		.option("-A, --all", "generate all (combines E,S,I,C,R flags)")
-		.option("-l, --lombok", "use lombok")
-		.option("-a, --auditable", "entities extend 'Auditable'")
-		.option("-s, --swagger", "add basic Swagger config class")
-		.option("-p, --specification", "adds JPA specification api based controller endpoints")
-		.option("-r, --sort", "adds sort to controller endpoints")
-		.option("-e, --enums <enumfile>", "load enum definitions from a json file")
-		.option("--ignore <ignore>", "ignore selected tables", "")
-		.option("--tables <tables>", "generated only listed tables", "")
-		.parse(args);
-
-	if (program.domain) {
-		new URL("http://" + program.domain);
+const run = (sql: string, options: SpringStrapOptions) => {
+	if (options.domain) {
+		new URL("http://" + options.domain);
 	}
 
-	const options: SpringStrapOptions = {
-		auditable: program.auditable,
-		controller: program.controller,
-		domain: program.domain || "",
-		entity: program.entity,
-		enums: program.enums,
-		ignore: program.ignore,
-		lombok: program.lombok,
-		output: program.output,
-		overwrite: program.overwrite,
-		repository: program.repository,
-		service: program.service,
-		serviceimpl: program.serviceimpl,
-		swagger: program.swagger,
-		tables: program.tables,
-		type: program.type,
-		specification: program.specification,
-		sort: program.sort,
-	};
-
-	if (program.all) {
-		options.entity = true;
-		options.repository = true;
-		options.service = true;
-		options.serviceimpl = true;
-		options.controller = true;
-	}
-
-
-	const rootDir = program.output ? join(program.output, "src/main/java") : join(process.cwd(), "src/main/java");
+	const rootDir = options.output ? join(options.output, "src/main/java") : join("src/main/java");
 	const entityDir = join(rootDir, ...options.domain.split("."), "entity");
 	const serviceDir = join(rootDir, ...options.domain.split("."), "service");
 	const serviceImplDir = join(rootDir, ...options.domain.split("."), "service/impl");
@@ -85,13 +28,11 @@ const run = (...args: string[]) => {
 	const repositoryDir = join(rootDir, ...options.domain.split("."), "repository");
 	const configDir = join(rootDir, ...options.domain.split("."), "config");
 
-	process.stdout.write("root   " + rootDir + "\n");
-	process.stdout.write("domain " + options.domain + "\n");
+	console.log("root   " + rootDir + "\n");
+	console.log("domain " + options.domain + "\n");
 
 
-	// TODO
-	const sql = "";
-	let jsonDDL = parseDDL(sql, program.type);
+	let jsonDDL = parseDDL(sql, options.type as any);
 	let relations: DDLManyToMany[] = [];
 	jsonDDL.forEach(tableDef => {
 		if (!Entity.isMtmTable(tableDef)) return;
@@ -129,7 +70,7 @@ const run = (...args: string[]) => {
 	jsonDDL.forEach(tableDef => {
 		try {
 			// TODO: possibly extract as a filter
-			const isIgnored = (options.ignore as string).split(",").some(ignore => ignore === tableDef.name);
+			const isIgnored = (options.ignore ? options.ignore : "").split(",").some(ignore => ignore === tableDef.name);
 			if (isIgnored) return;
 			if (Entity.isMtmTable(tableDef)) return;
 
@@ -154,8 +95,8 @@ const run = (...args: string[]) => {
 			if (options.controller)  out.push({filename: controllerFilename, content:controller.code});
 			// @formatter:on
 		} catch (e) {
-			process.stderr.write(e + "\n");
-			process.stderr.write(e.message + "\n");
+			console.error(e);
+			console.error(e.message);
 		}
 	});
 

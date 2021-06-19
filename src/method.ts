@@ -1,5 +1,4 @@
-import { FieldVisibility } from "./@types/method/Visibility";
-
+import FieldVisibility from "./Visbility";
 
 export interface MethodBuilder {
 

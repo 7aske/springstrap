@@ -18,6 +18,11 @@ import GenericSpecificationConverter from "./specification/GenericSpecificationC
 import SearchCriteria from "./specification/SearchCriteria";
 import SearchOperation from "./specification/SearchOperation";
 import SortConverter from "./sort/SortConverter";
+import SecurityConfig from "./security/SecurityConfig";
+import { writeIfNotExists } from "./fs-utils";
+import JwtProvider from "./security/JwtProvider";
+import JwtAuthorizationFilter from "./security/JwtAuthorizationFilter";
+import JwtAuthenticationFilter from "./security/JwtAuthenticationFilter";
 
 const PROG = "springstrap";
 
@@ -40,6 +45,7 @@ program
 	.option("-l, --lombok", "use lombok")
 	.option("-a, --auditable", "entities extend 'Auditable'")
 	.option("-s, --swagger", "add basic Swagger config class")
+	.option("-u, --security", "add Spring Security JWT implementation")
 	.option("-p, --specification", "adds JPA specification api based controller endpoints")
 	.option("-r, --sort", "adds sort to controller endpoints")
 	.option("-e, --enums <enumfile>", "load enum definitions from a json file")
@@ -80,6 +86,7 @@ const options: SpringStrapOptions = {
 	repository:    program.repository,
 	service:       program.service,
 	serviceimpl:   program.serviceimpl,
+	security:      program.security,
 	swagger:       program.swagger,
 	tables:        program.tables,
 	type:          program.type,
@@ -107,6 +114,7 @@ const controllerDir =    join(rootDir, ...options.domain.split("."), "controller
 const repositoryDir =    join(rootDir, ...options.domain.split("."), "repository");
 const specificationDir = join(rootDir, ...options.domain.split("."), "specification");
 const configDir =        join(rootDir, ...options.domain.split("."), "config");
+const securityDir =      join(rootDir, ...options.domain.split("."), "security");
 const beanDir =          join(rootDir, ...options.domain.split("."), "bean");
 const converterDir =          join(rootDir, ...options.domain.split("."), "bean/converter");
 // @formatter:on
@@ -161,6 +169,7 @@ try {
 	if (options.auditable)     dirs.push(configDir);
 	if (options.swagger)       dirs.push(configDir);
 	if (options.sort)          dirs.push(converterDir);
+	if (options.security)      dirs.push(securityDir);
 	// @formatter:on
 	dirs.forEach(dir => fs.mkdirSync(dir, {recursive: true}));
 } catch (e) {
@@ -211,21 +220,6 @@ const auditorAwareFilename = join(configDir, auditorAware.fileName);
 const swaggerFilename = join(configDir, swagger.fileName);
 const configFilename = join(configDir, config.fileName);
 
-// specification
-const criteriaParser = new CriteriaParser(options.domain, options);
-const genericSpecification = new GenericSpecification(options.domain, options);
-const genericSpecificationBuilder = new GenericSpecificationBuilder(options.domain, options);
-const genericSpecificationConverter = new GenericSpecificationConverter(options.domain, options);
-const searchCriteria = new SearchCriteria(options.domain, options);
-const searchOperation = new SearchOperation(options.domain, options);
-
-const criteriaParserFilename = join(specificationDir, criteriaParser.fileName);
-const genericSpecificationFilename = join(specificationDir, genericSpecification.fileName);
-const genericSpecificationBuilderFilename = join(specificationDir, genericSpecificationBuilder.fileName);
-const genericSpecificationConverterFilename = join(specificationDir, genericSpecificationConverter.fileName);
-const searchCriteriaFilename = join(specificationDir, searchCriteria.fileName);
-const searchOperationFilename = join(specificationDir, searchOperation.fileName);
-
 // sort
 const sortConverter = new SortConverter(options.domain, options);
 
@@ -239,16 +233,49 @@ if (!fs.existsSync(configFilename)       && options.auditable) fs.writeFileSync(
 
 // specification
 if (options.specification) {
-	if (!fs.existsSync(criteriaParserFilename))                fs.writeFileSync(criteriaParserFilename, criteriaParser.code);
-	if (!fs.existsSync(genericSpecificationFilename))          fs.writeFileSync(genericSpecificationFilename, genericSpecification.code);
-	if (!fs.existsSync(genericSpecificationBuilderFilename))   fs.writeFileSync(genericSpecificationBuilderFilename, genericSpecificationBuilder.code);
-	if (!fs.existsSync(genericSpecificationConverterFilename)) fs.writeFileSync(genericSpecificationConverterFilename, genericSpecificationConverter.code);
-	if (!fs.existsSync(searchCriteriaFilename))                fs.writeFileSync(searchCriteriaFilename, searchCriteria.code);
-	if (!fs.existsSync(searchOperationFilename))               fs.writeFileSync(searchOperationFilename, searchOperation.code);
+	const criteriaParser = new CriteriaParser(options.domain, options);
+	const genericSpecification = new GenericSpecification(options.domain, options);
+	const genericSpecificationBuilder = new GenericSpecificationBuilder(options.domain, options);
+	const genericSpecificationConverter = new GenericSpecificationConverter(options.domain, options);
+	const searchCriteria = new SearchCriteria(options.domain, options);
+	const searchOperation = new SearchOperation(options.domain, options);
+
+	const criteriaParserFilename = join(specificationDir, criteriaParser.fileName);
+	const genericSpecificationFilename = join(specificationDir, genericSpecification.fileName);
+	const genericSpecificationBuilderFilename = join(specificationDir, genericSpecificationBuilder.fileName);
+	const genericSpecificationConverterFilename = join(specificationDir, genericSpecificationConverter.fileName);
+	const searchCriteriaFilename = join(specificationDir, searchCriteria.fileName);
+	const searchOperationFilename = join(specificationDir, searchOperation.fileName);
+
+	writeIfNotExists(criteriaParserFilename, criteriaParser.code);
+	writeIfNotExists(genericSpecificationFilename, genericSpecification.code);
+	writeIfNotExists(genericSpecificationBuilderFilename, genericSpecificationBuilder.code);
+	writeIfNotExists(genericSpecificationConverterFilename, genericSpecificationConverter.code);
+	writeIfNotExists(searchCriteriaFilename, searchCriteria.code);
+	writeIfNotExists(searchOperationFilename, searchOperation.code);
+}
+
+// security
+
+if (options.security) {
+	const securityConfig = new SecurityConfig(options.domain, options);
+	const jwtProvider = new JwtProvider(options.domain, options);
+	const jwtAuthorizationFilter = new JwtAuthorizationFilter(options.domain, options);
+	const jwtAuthenticationFilter = new JwtAuthenticationFilter(options.domain, options);
+
+	const securityConfigFilename = join(securityDir, securityConfig.fileName);
+	const jwtProviderFilename = join(securityDir, jwtProvider.fileName);
+	const jwtAuthorizationFilterFilename = join(securityDir, jwtAuthorizationFilter.fileName);
+	const jwtAuthenticationFilterFilename = join(securityDir, jwtAuthenticationFilter.fileName);
+
+	writeIfNotExists(securityConfigFilename, securityConfig.code);
+	writeIfNotExists(jwtProviderFilename, jwtProvider.code);
+	writeIfNotExists(jwtAuthorizationFilterFilename, jwtAuthorizationFilter.code);
+	writeIfNotExists(jwtAuthenticationFilterFilename, jwtAuthenticationFilter.code);
 }
 
 if (options.sort) {
-	if (!fs.existsSync(sortConverterFilename)) fs.writeFileSync(sortConverterFilename, sortConverter.code);
+	writeIfNotExists(sortConverterFilename, sortConverter.code);
 }
 
 // @formatter:on

@@ -11,6 +11,7 @@ export default class Method {
 	private _visibility: FieldVisibility;
 	private _implementation: string;
 	private _annotations: string[];
+	private _throws: string[];
 
 
 	constructor() {
@@ -19,6 +20,7 @@ export default class Method {
 		this._implementation = "";
 		this._args = [];
 		this._annotations = [];
+		this._throws = [];
 	}
 
 	get args(): string[][] {
@@ -86,11 +88,26 @@ export default class Method {
 			.sort((a, b) => a.length - b.length)
 			.join("");
 
+		let throws = ""
+		if (this.throws.length > 0){
+			throws += "throws "
+			throws += this.throws.join(", ");
+			throws += " ";
+		}
+
 		let out = "";
 		out += annos;
-		out += `\t${this.visibility} ${this.returnType} ${this.name}(${args}) {\n`;
+		out += `\t${this.visibility} ${this.returnType} ${this.name}(${args}) ${throws}{\n`;
 		out += `\t${this.implementation}`;
 		out += `\t}\n\n`;
 		return out;
+	}
+
+	get throws(): string[] {
+		return this._throws;
+	}
+
+	set throws(value: string[]) {
+		this._throws = value;
 	}
 }

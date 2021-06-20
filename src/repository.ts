@@ -6,8 +6,10 @@ export default class Repository extends JavaClass {
 	private readonly _entity: Entity;
 	private readonly _className: string;
 
-	constructor(entity: Entity, options: SpringStrapOptions = {domain: ""}) {
-		super(options.domain, "repository");
+	constructor(entity: Entity, options: SpringStrapOptions) {
+		super(options.domain, "repository", options);
+		this._className = entity.className + "Repository";
+		this._entity = entity;
 		super.imports = [
 			"org.springframework.data.jpa.repository.*",
 			"org.springframework.stereotype.Repository",
@@ -17,17 +19,21 @@ export default class Repository extends JavaClass {
 			"Repository",
 		];
 		super.superClasses = [
-			`JpaRepository<${entity.className}, ${entity.columns.find(c => c.primaryKey)!.javaType}>`
-		]
+			`JpaRepository<${entity.className}, ${entity.columns.find(c => c.primaryKey)!.javaType}>`,
+		];
 		super.type = "interface";
-		super.lombok = true;
 
-		if (options.specification) {
-			super.superClasses.push(`JpaSpecificationExecutor<${entity.className}>`)
+		if (this.options.security && this.className === "UserRepository") {
+			super.imports.push(
+				"java.util.Optional",
+			);
 		}
 
-		this._entity = entity;
-		this._className = entity.className + "Repository";
+
+		if (options.specification) {
+			super.superClasses.push(`JpaSpecificationExecutor<${entity.className}>`);
+		}
+
 	}
 
 	public get className(): string {
@@ -39,7 +45,11 @@ export default class Repository extends JavaClass {
 	}
 
 	public get code(): string {
-		return this.wrap();
+		let code = "";
+		if (this.options.security && this.className === "UserRepository") {
+			code += "\tOptional<User> findByUsername(String username);\n";
+		}
+		return this.wrap(code);
 	}
 
 	get entity(): Entity {

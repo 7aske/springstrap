@@ -2,6 +2,8 @@ import { snakeToCamel, DEFAULT_SSOPT, plural, uncapitalize } from "./utils";
 import Service from "./service";
 import JavaClass from "./def/JavaClass";
 import Repository from "./repository";
+import Method from "./method";
+import { BasicMethodBuilder } from "./methodBuilder";
 
 export default class ServiceImpl extends JavaClass {
 	private readonly _service: Service;
@@ -10,6 +12,9 @@ export default class ServiceImpl extends JavaClass {
 
 	constructor(service: Service, repository: Repository, domain: string, options: SpringStrapOptions = DEFAULT_SSOPT) {
 		super(domain, "service.impl", options);
+		this._repository = repository;
+		this._service = service;
+		this._className = `${service.className}Impl`;
 		super.imports = [
 			"org.springframework.stereotype.Service",
 			`${service.entity.package}.*`,
@@ -31,16 +36,23 @@ export default class ServiceImpl extends JavaClass {
 			"org.springframework.beans.factory.annotation.Autowired",
 		];
 
-		if (this.options.specification) super.imports.push("org.springframework.data.jpa.domain.Specification")
+		if (this.options.specification) super.imports.push("org.springframework.data.jpa.domain.Specification");
 		if (this.options.sort) super.imports.push("org.springframework.data.domain.Sort");
+
+		if (this.options.security && this.className === "UserServiceImpl") {
+			super.imports.push(
+				"org.springframework.security.core.userdetails.UserDetails",
+				"org.springframework.security.core.userdetails.UserDetailsService",
+				"org.springframework.security.core.userdetails.UsernameNotFoundException",
+			);
+			super.interfaces.push("UserDetailsService");
+		}
 
 		super.auditable = false;
 		if (this.options.lombok) super.annotations.push(...lombokAnnotations);
 		if (this.options.lombok) super.imports.push("lombok.RequiredArgsConstructor");
 		if (!this.options.lombok) super.imports.push(...noLombokImports);
-		this._repository = repository;
-		this._service = service;
-		this._className = `${service.className}Impl`;
+
 	}
 
 	public get className(): string {
@@ -115,25 +127,37 @@ export default class ServiceImpl extends JavaClass {
 
 			code += "\t@Override\n";
 			code += `\tpublic List<${col.targetClassName}> add${plural(col.targetClassName)}ById(${ent.idArgsString}, List<${col.targetClassName}> ${col.targetVarName}) {\n`;
-			code += `\t\t${ent.className} ${ent.varName} = findById(${ent.idVars});\n`
-			code += `\t\t${ent.varName}.get${plural(col.targetClassName)}().addAll(${col.targetVarName});\n`
+			code += `\t\t${ent.className} ${ent.varName} = findById(${ent.idVars});\n`;
+			code += `\t\t${ent.varName}.get${plural(col.targetClassName)}().addAll(${col.targetVarName});\n`;
 			code += `\t\treturn ${ent.varName}Repository.save(${ent.varName}).get${plural(col.targetClassName)}();\n`;
 			code += "\t}\n\n";
 
 			code += "\t@Override\n";
 			code += `\tpublic List<${col.targetClassName}> set${plural(col.targetClassName)}ById(${ent.idArgsString}, List<${col.targetClassName}> ${col.targetVarName}) {\n`;
-			code += `\t\t${ent.className} ${ent.varName} = findById(${ent.idVars});\n`
-			code += `\t\t${ent.varName}.set${plural(col.targetClassName)}(${col.targetVarName});\n`
+			code += `\t\t${ent.className} ${ent.varName} = findById(${ent.idVars});\n`;
+			code += `\t\t${ent.varName}.set${plural(col.targetClassName)}(${col.targetVarName});\n`;
 			code += `\t\treturn ${ent.varName}Repository.save(${ent.varName}).get${plural(col.targetClassName)}();\n`;
 			code += "\t}\n\n";
 
 			code += "\t@Override\n";
 			code += `\tpublic List<${col.targetClassName}> delete${plural(col.targetClassName)}ById(${ent.idArgsString}, List<${col.targetClassName}> ${col.targetVarName}) {\n`;
-			code += `\t\t${ent.className} ${ent.varName} = findById(${ent.idVars});\n`
-			code += `\t\t${ent.varName}.get${plural(col.targetClassName)}().removeAll(${col.targetVarName});\n`
+			code += `\t\t${ent.className} ${ent.varName} = findById(${ent.idVars});\n`;
+			code += `\t\t${ent.varName}.get${plural(col.targetClassName)}().removeAll(${col.targetVarName});\n`;
 			code += `\t\treturn ${ent.varName}Repository.save(${ent.varName}).get${plural(col.targetClassName)}();\n`;
 			code += "\t}\n\n";
 		});
+
+		if (this.options.security && this.className === "UserServiceImpl") {
+			code += new BasicMethodBuilder()
+				.name("loadUserByUsername")
+				.annotation("Override")
+				.return("UserDetails")
+				.arg(["String", "username"])
+				.throws("UsernameNotFoundException")
+				.implementation("\treturn userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(\"User not found\"));\n")
+				.build()
+				.generate();
+		}
 
 		return this.wrap(code);
 	}

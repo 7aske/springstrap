@@ -15,6 +15,10 @@ import GenericSpecificationConverter from "./specification/GenericSpecificationC
 import SearchCriteria from "./specification/SearchCriteria";
 import SearchOperation from "./specification/SearchOperation";
 import SortConverter from "./sort/SortConverter";
+import SecurityConfig from "./security/SecurityConfig";
+import JwtProvider from "./security/JwtProvider";
+import JwtAuthorizationFilter from "./security/JwtAuthorizationFilter";
+import JwtAuthenticationFilter from "./security/JwtAuthenticationFilter";
 
 function join(...parts: string[]) {
 	const sep = "/";
@@ -35,6 +39,7 @@ const springstrap = (sql: string, options: SpringStrapOptions) => {
 	const repositoryDir = join(rootDir, ...options.domain.split("."), "repository");
 	const configDir = join(rootDir, ...options.domain.split("."), "config");
 	const specificationDir = join(rootDir, ...options.domain.split("."), "specification");
+	const securityDir =      join(rootDir, ...options.domain.split("."), "security");
 	const converterDir = join(rootDir, ...options.domain.split("."), "bean/converter");
 
 	console.log("root   " + rootDir + "\n");
@@ -148,6 +153,25 @@ const springstrap = (sql: string, options: SpringStrapOptions) => {
 		out.push({filename: searchCriteriaFilename, content: searchCriteria.code});
 		out.push({filename: searchOperationFilename, content: searchOperation.code});
 	}
+
+	// security
+	if (options.security) {
+		const securityConfig = new SecurityConfig(options.domain, options);
+		const jwtProvider = new JwtProvider(options.domain, options);
+		const jwtAuthorizationFilter = new JwtAuthorizationFilter(options.domain, options);
+		const jwtAuthenticationFilter = new JwtAuthenticationFilter(options.domain, options);
+
+		const securityConfigFilename = join(securityDir, securityConfig.fileName);
+		const jwtProviderFilename = join(securityDir, jwtProvider.fileName);
+		const jwtAuthorizationFilterFilename = join(securityDir, jwtAuthorizationFilter.fileName);
+		const jwtAuthenticationFilterFilename = join(securityDir, jwtAuthenticationFilter.fileName);
+
+		out.push({filename: securityConfigFilename, content: securityConfig.code});
+		out.push({filename: jwtProviderFilename, content: jwtProvider.code});
+		out.push({filename: jwtAuthorizationFilterFilename, content: jwtAuthorizationFilter.code});
+		out.push({filename: jwtAuthenticationFilterFilename, content: jwtAuthenticationFilter.code});
+	}
+
 
 	if (options.sort) {
 		out.push({filename: sortConverterFilename, content: sortConverter.code});

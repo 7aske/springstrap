@@ -14,6 +14,7 @@ export default class Entity extends JavaClass {
 	private readonly _columns: Column[];
 	private readonly _mtmColumns: MTMColumn[];
 	private readonly _enums: Enum[];
+	private readonly _hasRoles:boolean;
 
 	constructor({name, columns, primaryKey, foreignKeys, options}: DDLTable,
 	            domain: string,
@@ -36,6 +37,22 @@ export default class Entity extends JavaClass {
 		super.interfaces = [
 			"Serializable",
 		];
+
+		if (this.options.security && name === "user") {
+			this.imports.push(
+				"org.springframework.security.core.GrantedAuthority",
+				"org.springframework.security.core.userdetails.UserDetails",
+			);
+			this.interfaces.push("UserDetails")
+		}
+
+		if (this.options.security && name === "role") {
+			this.imports.push(
+				"org.springframework.security.core.GrantedAuthority",
+			);
+			this.interfaces.push("GrantedAuthority")
+		}
+
 		if (this.options.lombok) {
 			this.imports.push(...JavaClass.LOMBOK_IMPORTS);
 			this.annotations.push(...JavaClass.LOMBOK_ANNOTATIONS);
@@ -57,6 +74,8 @@ export default class Entity extends JavaClass {
 			}, this.options.lombok));
 
 		this._id = this._columns.filter(c => c.primaryKey)!;
+
+		this._hasRoles = this.mtmColumns.some(col => col.target === "role");
 	}
 
 	public get code() {
@@ -70,6 +89,55 @@ export default class Entity extends JavaClass {
 			code += `${this._columns.map(col => col.getter() + col.setter()).join("\n")}`;
 		}
 
+		if (this.options.security && this.className === "User") {
+			if (this._hasRoles) {
+				code += `
+	@JsonIgnore
+	@Override
+	public Collection<? extends GrantedAuthority> getAuthorities() {
+			return roles;
+	}\n\n`;
+			} else {
+				code += `@JsonIgnore
+	@Override
+	public Collection<? extends GrantedAuthority> getAuthorities() {
+			return null;
+	}\n\n`;
+			}
+			code += `
+	@JsonIgnore
+	@Override
+	public boolean isAccountNonExpired() {
+		return isEnabled();
+	}
+
+	@JsonIgnore
+	@Override
+	public boolean isAccountNonLocked() {
+		return isEnabled();
+	}
+
+	@JsonIgnore
+	@Override
+	public boolean isCredentialsNonExpired() {
+		return isEnabled();
+	}
+
+	@JsonIgnore
+	@Override
+	public boolean isEnabled() {
+		return true;
+	}\n\n`;
+		}
+
+		if (this.options.security && this.className === "Role") {
+			code += `@Override
+    public String getAuthority() {
+        return String.format("role_%s", name)
+                .toUpperCase(Locale.ROOT);
+    }\n\n`
+		}
+
 		return this.wrap(code);
 	}
 
@@ -78,7 +146,7 @@ export default class Entity extends JavaClass {
 	}
 
 	public get idArgs(): string[][] {
-		return this.id.map(pk => [pk.javaType, pk.varName])
+		return this.id.map(pk => [pk.javaType, pk.varName]);
 	}
 
 	public get idArgsString(): string {
@@ -127,7 +195,7 @@ export default class Entity extends JavaClass {
 	 * fk_count = pk_count = col_count
 	 * @param table
 	 */
-	public static isMtmTable(table: DDLTable){
+	public static isMtmTable(table: DDLTable) {
 		return table.foreignKeys !== undefined && table.primaryKey !== undefined &&
 			(table.columns.filter(col => !Entity.AUDIT_FIELDS.some(f => f === col.name)).length === table.foreignKeys.length) &&
 			table.primaryKey.columns.length === table.foreignKeys.length;

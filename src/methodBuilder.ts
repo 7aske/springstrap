@@ -18,6 +18,8 @@ export interface MethodBuilder {
 
 	visibility(vis: FieldVisibility): MethodBuilder;
 
+	throws(...exceptions: string[]): MethodBuilder;
+
 	public(): MethodBuilder;
 
 	private(): MethodBuilder;
@@ -85,6 +87,11 @@ export class BasicMethodBuilder implements MethodBuilder {
 
 	public implementation(impl: string): MethodBuilder {
 		this.instance.implementation = impl;
+		return this;
+	}
+
+	throws(...exceptions: string[]): MethodBuilder {
+		this.instance.throws.push(...exceptions);
 		return this;
 	}
 
@@ -207,6 +214,11 @@ export class ControllerMethodBuilder extends BasicMethodBuilder {
 		super.validate();
 		return this.nickname("", this.instance.name) as ControllerMethodBuilder;
 	}
+
+	throws(...exceptions: string[]): MethodBuilder {
+		return super.throws(...exceptions) as ControllerMethodBuilder;
+	}
+
 
 	build(): Method {
 		return super.build();

@@ -43,7 +43,7 @@ export default abstract class JavaClass {
 	public abstract get varName(): string;
 
 	protected wrap(classImpl: string = "", attr = ""): string {
-		if (this.options.auditable && this._type !== "interface") {
+		if (this.options.auditable && this._type !== "interface" && this.annotations.indexOf("Entity") !== -1) {
 			this._interfaces.splice(this._interfaces.indexOf("Serializable"), 1);
 			this._imports.splice(this._imports.indexOf("java.io.Serializable"), 1);
 			this._superClasses.push("Auditable");

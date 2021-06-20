@@ -12,6 +12,13 @@ import AuditorAware from "./auditoraware";
 import Swagger from "./swagger";
 import { Enum } from "./enum";
 import Config from "./config";
+import CriteriaParser from "./specification/CriteriaParser";
+import GenericSpecification from "./specification/GenericSpecification";
+import GenericSpecificationBuilder from "./specification/GenericSpecificationBuilder";
+import GenericSpecificationConverter from "./specification/GenericSpecificationConverter";
+import SearchCriteria from "./specification/SearchCriteria";
+import SearchOperation from "./specification/SearchOperation";
+import SortConverter from "./sort/SortConverter";
 
 const PROG = "springstrap";
 
@@ -60,25 +67,27 @@ if (program.domain) {
 	}
 }
 
+// @formatter:off
 const options: SpringStrapOptions = {
-	auditable: program.auditable,
-	controller: program.controller,
-	domain: program.domain || "",
-	entity: program.entity,
-	enums: program.enums,
-	ignore: program.ignore,
-	lombok: program.lombok,
-	output: program.output,
-	overwrite: program.overwrite,
-	repository: program.repository,
-	service: program.service,
-	serviceimpl: program.serviceimpl,
-	swagger: program.swagger,
-	tables: program.tables,
-	type: program.type,
+	auditable:     program.auditable,
+	controller:    program.controller,
+	domain:        program.domain || "",
+	entity:        program.entity,
+	enums:         program.enums,
+	ignore:        program.ignore,
+	lombok:        program.lombok,
+	output:        program.output,
+	overwrite:     program.overwrite,
+	repository:    program.repository,
+	service:       program.service,
+	serviceimpl:   program.serviceimpl,
+	swagger:       program.swagger,
+	tables:        program.tables,
+	type:          program.type,
 	specification: program.specification,
-	sort: program.sort
+	sort:          program.sort,
 };
+// @formatter: on
 
 if (program.all) {
 	options.entity = true;
@@ -90,13 +99,18 @@ if (program.all) {
 
 
 const rootDir = program.output ? join(program.output, "src/main/java") : join(process.cwd(), "src/main/java");
-const entityDir = join(rootDir, ...options.domain.split("."), "entity");
-const entityDomainDir = join(rootDir, ...options.domain.split("."), "entity/domain");
-const serviceDir = join(rootDir, ...options.domain.split("."), "service");
-const serviceImplDir = join(rootDir, ...options.domain.split("."), "service/impl");
-const controllerDir = join(rootDir, ...options.domain.split("."), "controller");
-const repositoryDir = join(rootDir, ...options.domain.split("."), "repository");
-const configDir = join(rootDir, ...options.domain.split("."), "config");
+// @formatter:off
+const entityDir =        join(rootDir, ...options.domain.split("."), "entity");
+const entityDomainDir =  join(rootDir, ...options.domain.split("."), "entity/domain");
+const serviceDir =       join(rootDir, ...options.domain.split("."), "service");
+const serviceImplDir =   join(rootDir, ...options.domain.split("."), "service/impl");
+const controllerDir =    join(rootDir, ...options.domain.split("."), "controller");
+const repositoryDir =    join(rootDir, ...options.domain.split("."), "repository");
+const specificationDir = join(rootDir, ...options.domain.split("."), "specification");
+const configDir =        join(rootDir, ...options.domain.split("."), "config");
+const beanDir =          join(rootDir, ...options.domain.split("."), "bean");
+const converterDir =          join(rootDir, ...options.domain.split("."), "bean/converter");
+// @formatter:on
 
 process.stdout.write("root   " + rootDir + "\n");
 process.stdout.write("domain " + options.domain + "\n");
@@ -139,13 +153,18 @@ if (options.tables) {
 
 try {
 	const dirs = [rootDir];
-	if (options.entity) dirs.push(entityDir);
-	if (options.repository) dirs.push(repositoryDir);
-	if (options.service) dirs.push(serviceDir);
-	if (options.serviceimpl) dirs.push(serviceImplDir);
-	if (options.controller) dirs.push(controllerDir);
-	if (enums.length > 0) dirs.push(entityDomainDir);
-	if (options.auditable || options.swagger) dirs.push(configDir);
+	// @formatter:off
+	if (options.entity)        dirs.push(entityDir);
+	if (options.repository)    dirs.push(repositoryDir);
+	if (options.service)       dirs.push(serviceDir);
+	if (options.serviceimpl)   dirs.push(serviceImplDir);
+	if (options.controller)    dirs.push(controllerDir);
+	if (options.specification) dirs.push(specificationDir)
+	if (enums.length > 0)      dirs.push(entityDomainDir);
+	if (options.auditable)     dirs.push(configDir);
+	if (options.swagger)       dirs.push(configDir);
+	if (options.sort)          dirs.push(converterDir);
+	// @formatter:on
 	dirs.forEach(dir => fs.mkdirSync(dir, {recursive: true}));
 } catch (e) {
 	process.stderr.write(e.message + "\n");
@@ -190,15 +209,52 @@ const auditable = new Auditable(options.domain);
 const auditorAware = new AuditorAware(options.domain);
 const swagger = new Swagger(options.domain);
 const config = new Config(options.domain, options);
+
 const auditableFilename = join(entityDir, auditable.fileName);
 const auditorAwareFilename = join(configDir, auditorAware.fileName);
 const swaggerFilename = join(configDir, swagger.fileName);
 const configFilename = join(configDir, config.fileName);
+
+// specification
+const criteriaParser = new CriteriaParser(options.domain, options);
+const genericSpecification = new GenericSpecification(options.domain, options);
+const genericSpecificationBuilder = new GenericSpecificationBuilder(options.domain, options);
+const genericSpecificationConverter = new GenericSpecificationConverter(options.domain, options);
+const searchCriteria = new SearchCriteria(options.domain, options);
+const searchOperation = new SearchOperation(options.domain, options);
+
+const criteriaParserFilename = join(specificationDir, criteriaParser.fileName);
+const genericSpecificationFilename = join(specificationDir, genericSpecification.fileName);
+const genericSpecificationBuilderFilename = join(specificationDir, genericSpecificationBuilder.fileName);
+const genericSpecificationConverterFilename = join(specificationDir, genericSpecificationConverter.fileName);
+const searchCriteriaFilename = join(specificationDir, searchCriteria.fileName);
+const searchOperationFilename = join(specificationDir, searchOperation.fileName);
+
+// sort
+const sortConverter = new SortConverter(options.domain, options);
+
+const sortConverterFilename = join(converterDir, sortConverter.fileName);
+
 // @formatter:off
 if (!fs.existsSync(auditableFilename)    && options.auditable) fs.writeFileSync(auditableFilename, auditable.code);
 if (!fs.existsSync(auditorAwareFilename) && options.auditable) fs.writeFileSync(auditorAwareFilename, auditorAware.code);
 if (!fs.existsSync(swaggerFilename)      && options.swagger)   fs.writeFileSync(swaggerFilename, swagger.code);
 if (!fs.existsSync(configFilename)       && options.auditable) fs.writeFileSync(configFilename, config.code);
+
+// specification
+if (options.specification) {
+	if (!fs.existsSync(criteriaParserFilename))                fs.writeFileSync(criteriaParserFilename, criteriaParser.code);
+	if (!fs.existsSync(genericSpecificationFilename))          fs.writeFileSync(genericSpecificationFilename, genericSpecification.code);
+	if (!fs.existsSync(genericSpecificationBuilderFilename))   fs.writeFileSync(genericSpecificationBuilderFilename, genericSpecificationBuilder.code);
+	if (!fs.existsSync(genericSpecificationConverterFilename)) fs.writeFileSync(genericSpecificationConverterFilename, genericSpecificationConverter.code);
+	if (!fs.existsSync(searchCriteriaFilename))                fs.writeFileSync(searchCriteriaFilename, searchCriteria.code);
+	if (!fs.existsSync(searchOperationFilename))               fs.writeFileSync(searchOperationFilename, searchOperation.code);
+}
+
+if (options.sort) {
+	if (!fs.existsSync(sortConverterFilename)) fs.writeFileSync(sortConverterFilename, sortConverter.code);
+}
+
 // @formatter:on
 enums.map(e => new Enum(options.domain, e, options)).forEach(e => {
 	const enumFilename = join(entityDir, "domain", e.className + ".java");

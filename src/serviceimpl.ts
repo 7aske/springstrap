@@ -36,6 +36,7 @@ export default class ServiceImpl extends JavaClass {
 
 		super.auditable = false;
 		if (this.options.lombok) super.annotations.push(...lombokAnnotations);
+		if (this.options.lombok) super.imports.push("lombok.RequiredArgsConstructor");
 		if (!this.options.lombok) super.imports.push(...noLombokImports);
 		this._repository = repository;
 		this._service = service;

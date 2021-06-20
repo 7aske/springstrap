@@ -94,6 +94,10 @@ Generate structure with enums:
 }
 ```
 
+## Demo
+
+[Springstrap](https://springstrap.7aske.com) live demo.
+
 ## Generated structure
 
 ```

@@ -3,14 +3,13 @@ import * as fs from "fs";
 import { join } from "path";
 import Controller from "./controller";
 import Entity from "./entity";
-import { parseDDL, parseEnums } from "./parser";
+import { parseDDL } from "./parser";
 import Repository from "./repository";
 import Service from "./service";
 import ServiceImpl from "./serviceimpl";
 import Auditable from "./auditable";
 import AuditorAware from "./auditoraware";
 import Swagger from "./swagger";
-import { Enum } from "./enum";
 import Config from "./config";
 import CriteriaParser from "./specification/CriteriaParser";
 import GenericSpecification from "./specification/GenericSpecification";
@@ -117,7 +116,6 @@ process.stdout.write("domain " + options.domain + "\n");
 
 
 const sql = fs.readFileSync(filename).toString();
-const enums = options.enums ? parseEnums(options.enums) : [];
 let jsonDDL = parseDDL(sql, program.type);
 let relations: DDLManyToMany[] = [];
 jsonDDL.forEach(tableDef => {
@@ -160,7 +158,6 @@ try {
 	if (options.serviceimpl)   dirs.push(serviceImplDir);
 	if (options.controller)    dirs.push(controllerDir);
 	if (options.specification) dirs.push(specificationDir)
-	if (enums.length > 0)      dirs.push(entityDomainDir);
 	if (options.auditable)     dirs.push(configDir);
 	if (options.swagger)       dirs.push(configDir);
 	if (options.sort)          dirs.push(converterDir);
@@ -179,9 +176,8 @@ jsonDDL.forEach(tableDef => {
 		if (Entity.isMtmTable(tableDef)) return;
 
 		const manyToMany = relations.filter(rel => rel.source === tableDef.name);
-		const entityEnums = enums.filter(e => e.tables.some(t => t === tableDef.name));
 
-		const entity = new Entity(tableDef, options.domain, manyToMany, entityEnums, options);
+		const entity = new Entity(tableDef, options.domain, manyToMany, [], options);
 		const repository = new Repository(entity, options);
 		const service = new Service(entity, options);
 		const serviceImpl = new ServiceImpl(service, repository, options.domain, options);
@@ -256,7 +252,3 @@ if (options.sort) {
 }
 
 // @formatter:on
-enums.map(e => new Enum(options.domain, e, options)).forEach(e => {
-	const enumFilename = join(entityDir, "domain", e.className + ".java");
-	if ((!fs.existsSync(enumFilename) || options.overwrite) && options.entity) fs.writeFileSync(enumFilename, e.code);
-});

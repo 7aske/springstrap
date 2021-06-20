@@ -8,6 +8,14 @@ import Auditable from "./auditable";
 import AuditorAware from "./auditoraware";
 import Swagger from "./swagger";
 import Config from "./config";
+import CriteriaParser from "./specification/CriteriaParser";
+import GenericSpecification from "./specification/GenericSpecification";
+import GenericSpecificationBuilder from "./specification/GenericSpecificationBuilder";
+import GenericSpecificationConverter from "./specification/GenericSpecificationConverter";
+import SearchCriteria from "./specification/SearchCriteria";
+import SearchOperation from "./specification/SearchOperation";
+import SortConverter from "./sort/SortConverter";
+import fs from "fs";
 
 function join(...parts: string[]) {
 	const sep = "/";
@@ -15,7 +23,7 @@ function join(...parts: string[]) {
 	return parts.join(sep).replace(replace, sep);
 }
 
-const run = (sql: string, options: SpringStrapOptions) => {
+const springstrap = (sql: string, options: SpringStrapOptions) => {
 	if (options.domain) {
 		new URL("http://" + options.domain);
 	}
@@ -27,6 +35,8 @@ const run = (sql: string, options: SpringStrapOptions) => {
 	const controllerDir = join(rootDir, ...options.domain.split("."), "controller");
 	const repositoryDir = join(rootDir, ...options.domain.split("."), "repository");
 	const configDir = join(rootDir, ...options.domain.split("."), "config");
+	const specificationDir = join(rootDir, ...options.domain.split("."), "specification");
+	const converterDir = join(rootDir, ...options.domain.split("."), "bean/converter");
 
 	console.log("root   " + rootDir + "\n");
 	console.log("domain " + options.domain + "\n");
@@ -108,6 +118,42 @@ const run = (sql: string, options: SpringStrapOptions) => {
 	const auditorAwareFilename = join(configDir, auditorAware.fileName);
 	const swaggerFilename = join(configDir, swagger.fileName);
 	const configFilename = join(configDir, config.fileName);
+
+
+	// specification
+	const criteriaParser = new CriteriaParser(options.domain, options);
+	const genericSpecification = new GenericSpecification(options.domain, options);
+	const genericSpecificationBuilder = new GenericSpecificationBuilder(options.domain, options);
+	const genericSpecificationConverter = new GenericSpecificationConverter(options.domain, options);
+	const searchCriteria = new SearchCriteria(options.domain, options);
+	const searchOperation = new SearchOperation(options.domain, options);
+
+	const criteriaParserFilename = join(specificationDir, criteriaParser.fileName);
+	const genericSpecificationFilename = join(specificationDir, genericSpecification.fileName);
+	const genericSpecificationBuilderFilename = join(specificationDir, genericSpecificationBuilder.fileName);
+	const genericSpecificationConverterFilename = join(specificationDir, genericSpecificationConverter.fileName);
+	const searchCriteriaFilename = join(specificationDir, searchCriteria.fileName);
+	const searchOperationFilename = join(specificationDir, searchOperation.fileName);
+
+	// sort
+	const sortConverter = new SortConverter(options.domain, options);
+
+	const sortConverterFilename = join(converterDir, sortConverter.fileName);
+
+	// specification
+	if (options.specification) {
+		out.push({filename: criteriaParserFilename, content: criteriaParser.code});
+		out.push({filename: genericSpecificationFilename, content: genericSpecification.code});
+		out.push({filename: genericSpecificationBuilderFilename, content: genericSpecificationBuilder.code});
+		out.push({filename: genericSpecificationConverterFilename, content: genericSpecificationConverter.code});
+		out.push({filename: searchCriteriaFilename, content: searchCriteria.code});
+		out.push({filename: searchOperationFilename, content: searchOperation.code});
+	}
+
+	if (options.sort) {
+		out.push({filename: sortConverterFilename, content: sortConverter.code});
+	}
+
 	// @formatter:off
 	if (options.auditable) out.push({filename:auditableFilename, content:auditable.code});
 	if (options.auditable) out.push({filename:auditorAwareFilename, content:auditorAware.code});
@@ -117,4 +163,4 @@ const run = (sql: string, options: SpringStrapOptions) => {
 	return out;
 }
 
-export default run;
+export default springstrap;

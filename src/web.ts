@@ -15,7 +15,6 @@ import GenericSpecificationConverter from "./specification/GenericSpecificationC
 import SearchCriteria from "./specification/SearchCriteria";
 import SearchOperation from "./specification/SearchOperation";
 import SortConverter from "./sort/SortConverter";
-import fs from "fs";
 
 function join(...parts: string[]) {
 	const sep = "/";

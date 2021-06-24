@@ -5,7 +5,8 @@
 	"main": "src/index.js",
 	"scripts": {
 		"build": "tsc && webpack",
-		"build:install": "scripts/install.sh"
+		"build:install": "scripts/install.sh",
+		"prebuild:install": "npm run build"
 	},
 	"keywords": [],
 	"author": "",

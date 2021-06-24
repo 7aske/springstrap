@@ -1,4 +1,4 @@
-import program from "commander";
+import commander from "commander";
 import * as fs from "fs";
 import { join } from "path";
 import Controller from "./controller";
@@ -24,18 +24,27 @@ import { writeIfNotExists } from "./fs-utils";
 import JwtProvider from "./security/JwtProvider";
 import JwtAuthorizationFilter from "./security/JwtAuthorizationFilter";
 import JwtAuthenticationFilter from "./security/JwtAuthenticationFilter";
+import Application from "./application/Application";
+import ServletInitializer from "./application/ServletInitializer";
+import { generatePomXml } from "./application/pom";
+import dependencyRegistrar from "./application/DependencyRegistrar";
+import PropertiesFile from "./def/PropertiesFile";
+import { response, snakeToCamel } from "./utils";
+import ApplicationTests from "./application/ApplicationTests";
 
 const PROG = "springstrap";
 
 let filename = "";
+const program = new commander.Command();
+
 program
 	.arguments("<ddl_file.sql>")
 	.action(function (cmd: string) {
 		filename = cmd;
 	})
-	.option("-t, --type <mariadb|mysql>", "database type")
+	.requiredOption("-d, --domain <domain>", "your app domain with name (eg. 'com.example.demo')", "")
+	.option("-t, --type <mariadb|mysql>", "database type", "mariadb")
 	.option("-o, --output <filepath>", "output root path")
-	.option("-d, --domain <domain>", "your app domain (eg. 'com.example.com')", "")
 	.option("-w, --overwrite", "overwrite existing files")
 	.option("-E, --entity", "generate entities")
 	.option("-S, --service", "generate services")
@@ -52,51 +61,93 @@ program
 	.option("-e, --enums <enumfile>", "load enum definitions from a json file")
 	.option("--ignore <ignore>", "ignore selected tables", "")
 	.option("--tables <tables>", "generated only listed tables", "")
+	.option("--pom", "generate pom.xml", false)
+	.option("--deps <value...>", "dependencies (spring-security, mariadb...)")
+	.option("--name <name>", "project name", "")
+	.option("--java-version <javaVersion>", "java version", "11")
+	.option("--packaging <packaging>", "packaging", "war")
+	.option("--description <description>", "description", "Springstrap application")
 	.parse(process.argv);
+
+const opts = program.opts();
 
 if (!fs.existsSync(filename)) {
 	process.stderr.write(`${PROG}: no such file or directory: '${filename}'\n`);
 	process.exit(2);
 }
 
-if (program.enums && !fs.existsSync(program.enums)) {
+if (opts.enums && !fs.existsSync(opts.enums)) {
 	process.stderr.write(`${PROG}: no such file or directory: '${filename}'\n`);
 	process.exit(2);
 }
 
-if (program.domain) {
-	try {
-		new URL("http://" + program.domain);
-	} catch (e) {
-		process.stderr.write(`${PROG}: invalid domain: '${program.domain}'\n`);
-		program.help();
-	}
+try {
+	new URL("http://" + opts.domain);
+} catch (e) {
+	process.stderr.write(`${PROG}: invalid domain: '${opts.domain}'\n`);
+	opts.help();
 }
 
 // @formatter:off
 const options: SpringStrapOptions = {
-	auditable:     program.auditable,
-	controller:    program.controller,
-	domain:        program.domain || "",
-	entity:        program.entity,
-	enums:         program.enums,
-	ignore:        program.ignore,
-	lombok:        program.lombok,
-	output:        program.output,
-	overwrite:     program.overwrite,
-	repository:    program.repository,
-	service:       program.service,
-	serviceimpl:   program.serviceimpl,
-	security:      program.security,
-	swagger:       program.swagger,
-	tables:        program.tables,
-	type:          program.type,
-	specification: program.specification,
-	sort:          program.sort,
+	auditable:     opts.auditable,
+	controller:    opts.controller,
+	domain:        opts.domain,
+	entity:        opts.entity,
+	enums:         opts.enums,
+	ignore:        opts.ignore,
+	lombok:        opts.lombok,
+	output:        opts.output,
+	overwrite:     opts.overwrite,
+	repository:    opts.repository,
+	service:       opts.service,
+	serviceimpl:   opts.serviceimpl,
+	security:      opts.security,
+	swagger:       opts.swagger,
+	tables:        opts.tables,
+	type:          opts.type,
+	specification: opts.specification,
+	sort:          opts.sort,
 };
+
+if (opts.name) {
+	options.domain += "." + snakeToCamel(opts.name);
+}
+const depsSet = new Set(opts.deps);
+
+if (opts.lombok) {
+	depsSet.add("lombok");
+}
+
+if (opts.swagger) {
+	depsSet.add("swagger");
+}
+
+if (opts.security) {
+	depsSet.add("spring-security");
+	depsSet.add("java-jwt")
+}
+
+depsSet.add(opts.type);
+depsSet.add("spring-boot");
+depsSet.add("spring-data-jpa");
+
+const domainLast = options.domain.split(".").splice(-1, 1)[0];
+const pomXmlOptions: PomXmlOptions = {
+	artifactId:    domainLast,
+	groupId:       opts.domain,
+	javaVersion:   opts.javaVersion,
+	name:          domainLast,
+	packaging:     opts.packaging,
+	description:   opts.description,
+	dependencies:  ([... depsSet] as string[])
+						.map(dep => dependencyRegistrar[dep])
+						.filter(dep => !!dep)
+						.reduce((acc, val) => acc.concat(val), [])
+}
 // @formatter: on
 
-if (program.all) {
+if (opts.all) {
 	options.entity = true;
 	options.repository = true;
 	options.service = true;
@@ -105,19 +156,22 @@ if (program.all) {
 }
 
 
-const rootDir = program.output ? join(program.output, "src/main/java") : join(process.cwd(), "src/main/java");
+const rootDir = opts.output ? opts.output : process.cwd();
 // @formatter:off
-const entityDir =        join(rootDir, ...options.domain.split("."), "entity");
-const entityDomainDir =  join(rootDir, ...options.domain.split("."), "entity/domain");
-const serviceDir =       join(rootDir, ...options.domain.split("."), "service");
-const serviceImplDir =   join(rootDir, ...options.domain.split("."), "service/impl");
-const controllerDir =    join(rootDir, ...options.domain.split("."), "controller");
-const repositoryDir =    join(rootDir, ...options.domain.split("."), "repository");
-const specificationDir = join(rootDir, ...options.domain.split("."), "specification");
-const configDir =        join(rootDir, ...options.domain.split("."), "config");
-const securityDir =      join(rootDir, ...options.domain.split("."), "security");
-const beanDir =          join(rootDir, ...options.domain.split("."), "bean");
-const converterDir =          join(rootDir, ...options.domain.split("."), "bean/converter");
+const domainDir =        join(rootDir, "src/main/java", ...options.domain.split("."));
+const resourcesDir =     join(rootDir, "src/main/resources");
+const domainTestsDir =   join(rootDir, "src/test/java", ...options.domain.split("."));
+const entityDir =        join(domainDir, "entity");
+const entityDomainDir =  join(domainDir, "entity/domain");
+const serviceDir =       join(domainDir, "service");
+const serviceImplDir =   join(domainDir, "service/impl");
+const controllerDir =    join(domainDir, "controller");
+const repositoryDir =    join(domainDir, "repository");
+const specificationDir = join(domainDir, "specification");
+const configDir =        join(domainDir, "config");
+const securityDir =      join(domainDir, "security");
+const beanDir =          join(domainDir, "bean");
+const converterDir =     join(domainDir, "bean/converter");
 // @formatter:on
 
 process.stdout.write("root   " + rootDir + "\n");
@@ -126,7 +180,7 @@ process.stdout.write("domain " + options.domain + "\n");
 
 const sql = fs.readFileSync(filename).toString();
 const enums = options.enums ? parseEnums(options.enums) : [];
-let jsonDDL = parseDDL(sql, program.type);
+let jsonDDL = parseDDL(sql, opts.type);
 let relations: DDLManyToMany[] = [];
 jsonDDL.forEach(tableDef => {
 	if (!Entity.isMtmTable(tableDef)) return;
@@ -160,7 +214,7 @@ if (options.tables) {
 }
 
 try {
-	const dirs = [rootDir];
+	const dirs = [domainDir, domainTestsDir, resourcesDir];
 	// @formatter:off
 	if (options.entity)        dirs.push(entityDir);
 	if (options.repository)    dirs.push(repositoryDir);
@@ -281,6 +335,27 @@ if (options.security) {
 if (options.sort) {
 	writeIfNotExists(sortConverterFilename, sortConverter.code);
 }
+
+if (opts.pom) {
+	const application = new Application(options.domain, options);
+	const applicationTests = new ApplicationTests(options.domain, options);
+	const servletInitializer = new ServletInitializer(options.domain, options, application.className);
+	const pomXml = generatePomXml(pomXmlOptions);
+	const applicationProperties = new PropertiesFile("application", options, pomXmlOptions);
+
+	const applicationFilename = join(domainDir, application.fileName);
+	const applicationTestsFilename = join(domainTestsDir, applicationTests.fileName);
+	const servletInitializerFilename = join(domainDir, servletInitializer.fileName);
+	const pomXmlFilename = join(rootDir, "pom.xml");
+	const applicationPropertiesFilename = join(resourcesDir, applicationProperties.fileName)
+
+	writeIfNotExists(applicationFilename, application.code);
+	writeIfNotExists(applicationTestsFilename, applicationTests.code);
+	writeIfNotExists(servletInitializerFilename, servletInitializer.code);
+	writeIfNotExists(pomXmlFilename, pomXml);
+	writeIfNotExists(applicationPropertiesFilename, applicationProperties.content);
+}
+
 
 // @formatter:on
 enums.map(e => new Enum(options.domain, e, options)).forEach(e => {

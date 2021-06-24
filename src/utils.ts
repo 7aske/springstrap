@@ -1,8 +1,7 @@
 export const snakeToCamel = (name: string, toCapitalize = false) => {
 	for (let i = 0; i < name.length; i++) {
-		if (name[i] === "_") {
+		if (name[i] === "_" || name[i] === "-") {
 			name = name.substring(0, i) + name.charAt(i + 1).toUpperCase() + name.substring(i + 2);
-
 		}
 	}
 	if (toCapitalize) {

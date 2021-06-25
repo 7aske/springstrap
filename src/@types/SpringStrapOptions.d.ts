@@ -1,4 +1,5 @@
 declare interface SpringStrapOptions {
+	filename: string;
 	lombok?: boolean;
 	auditable?: boolean;
 	type?: "mariadb" | "mysql";
@@ -10,11 +11,13 @@ declare interface SpringStrapOptions {
 	serviceimpl?: boolean;
 	controller?: boolean;
 	repository?: boolean;
-	ignore?: string;
-	tables?: string;
+	ignore?: string[];
+	tables?: string[];
 	swagger?: boolean;
 	security?: boolean;
 	enums?: string;
 	specification?: boolean;
 	sort?: boolean;
+	pom?: boolean;
+	pomOptions?: PomXmlOptions
 }

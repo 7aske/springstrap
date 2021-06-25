@@ -33,9 +33,10 @@ export const hasComposite = (table: DDLTable) => {
 };
 
 export const DEFAULT_SSOPT: SpringStrapOptions = {
+	filename: "",
 	output: "./",
 	type: "mariadb",
-	domain: "",
+	domain: ""
 };
 
 export const formatImports = (imports: string[]): string => {

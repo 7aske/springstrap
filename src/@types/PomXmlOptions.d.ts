@@ -23,6 +23,7 @@ declare interface PomXmlOptions {
 	description?: string;
 	javaVersion: string;
 	properties?: Record<string, string>
+	deps?: string[];
 	dependencies?: PomXmlDependency[];
 	plugins?: PomXmlPlugin[];
 }

@@ -1,34 +1,33 @@
-import { snakeToCamel } from "./utils";
-import dependencyRegistrar from "./application/DependencyRegistrar";
-import { join } from "path";
-import fs from "fs";
-import { parseEnums, parseDDL } from "./parser";
-import Entity from "./entity";
-import Repository from "./repository";
-import Service from "./service";
-import ServiceImpl from "./serviceimpl";
-import Controller from "./controller";
+import Application from "./application/Application";
+import ApplicationTests from "./application/ApplicationTests";
 import Auditable from "./auditable";
 import AuditorAware from "./auditoraware";
-import Swagger from "./swagger";
 import Config from "./config";
+import Controller from "./controller";
 import CriteriaParser from "./specification/CriteriaParser";
+import Entity from "./entity";
 import GenericSpecification from "./specification/GenericSpecification";
 import GenericSpecificationBuilder from "./specification/GenericSpecificationBuilder";
 import GenericSpecificationConverter from "./specification/GenericSpecificationConverter";
+import JwtAuthenticationFilter from "./security/JwtAuthenticationFilter";
+import JwtAuthorizationFilter from "./security/JwtAuthorizationFilter";
+import JwtProvider from "./security/JwtProvider";
+import PropertiesFile from "./def/PropertiesFile";
+import Repository from "./repository";
 import SearchCriteria from "./specification/SearchCriteria";
 import SearchOperation from "./specification/SearchOperation";
 import SecurityConfig from "./security/SecurityConfig";
-import JwtProvider from "./security/JwtProvider";
-import JwtAuthorizationFilter from "./security/JwtAuthorizationFilter";
-import JwtAuthenticationFilter from "./security/JwtAuthenticationFilter";
-import SortConverter from "./sort/SortConverter";
-import Application from "./application/Application";
-import ApplicationTests from "./application/ApplicationTests";
+import Service from "./service";
+import ServiceImpl from "./serviceimpl";
 import ServletInitializer from "./application/ServletInitializer";
-import { generatePomXml } from "./application/pom";
-import PropertiesFile from "./def/PropertiesFile";
+import SortConverter from "./sort/SortConverter";
+import Swagger from "./swagger";
+import dependencyRegistrar from "./application/DependencyRegistrar";
 import { Enum } from "./enum";
+import { generatePomXml } from "./application/pom";
+import { join } from "path";
+import { parseDDL } from "./parser";
+import { snakeToCamel } from "./utils";
 
 const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: PomXmlOptions): GeneratedFile[] => {
 	const out: GeneratedFile[] = [];
@@ -43,7 +42,7 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 	}
 
 
-	const DEFAULT_DEPS = [options.type, "spring-boot", "spring-data-jpa"]
+	const DEFAULT_DEPS = [options.type, "spring-boot", "spring-data-jpa"];
 	const depsSet = new Set([...(pomXmlOptions.deps ?? []), ...DEFAULT_DEPS]);
 
 	if (options.lombok) {
@@ -56,13 +55,13 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 
 	if (options.security) {
 		depsSet.add("spring-security");
-		depsSet.add("java-jwt")
+		depsSet.add("java-jwt");
 	}
 
-	pomXmlOptions.dependencies = ([... depsSet] as string[])
+	pomXmlOptions.dependencies = ([...depsSet] as string[])
 		.map(dep => dependencyRegistrar[dep])
 		.filter(dep => !!dep)
-		.reduce((acc, val) => acc.concat(val), [])
+		.reduce((acc, val) => acc.concat(val), []);
 
 
 	const rootDir = options.output ? options.output : process.cwd();
@@ -86,7 +85,7 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 	console.log("root   " + rootDir);
 	console.log("domain " + options.domain);
 
-	const enums = options.enums ? parseEnums(options.enums) : [];
+	const enums = options.enums ?? [];
 	let jsonDDL = parseDDL(sql, options.type!);
 	let relations: DDLManyToMany[] = [];
 	jsonDDL.forEach(tableDef => {
@@ -121,7 +120,7 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 
 	const isNotIgnoredOrMtmTable = (tableDef: DDLTable) => {
 		return (options.ignore ?? []).some(ignore => ignore === tableDef.name) && !Entity.isMtmTable(tableDef);
-	}
+	};
 
 	jsonDDL.filter(isNotIgnoredOrMtmTable).forEach(tableDef => {
 		try {

@@ -4,6 +4,15 @@ import { snakeToCamel } from "./utils";
 import springstrap from "./springstrap";
 import path from "path";
 
+export const parseEnums = (filepath: string): EnumType[] =>{
+	try {
+		return JSON.parse(fs.readFileSync(filepath).toString()).enums;
+	} catch (e) {
+		console.error(e.message);
+		return [];
+	}
+}
+
 const PROG = "springstrap";
 
 const program = new commander.Command();
@@ -55,7 +64,7 @@ const options: SpringStrapOptions = {
 	controller:    opts.controller,
 	domain:        opts.domain,
 	entity:        opts.entity,
-	enums:         opts.enums,
+	enums:         parseEnums(opts.enums),
 	ignore:        opts.ignore,
 	lombok:        opts.lombok,
 	output:        opts.output,

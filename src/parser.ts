@@ -1,6 +1,6 @@
-import { Parser } from "sql-ddl-to-json-schema";
+const Parser = require("sql-ddl-to-json-schema");
 
-export const parseDDL = (sql: string, type: "mysql" | "mariadb"): DDLTable[] => {
+export const parseDDL = (sql: string, type: string): DDLTable[] => {
 	const parser = new Parser(type);
 
 	sql = sql.replace(/^--.*$/mg, "");

@@ -105,7 +105,9 @@ export default abstract class JavaClass {
 	}
 
 	public get package(): string {
+		if (!this._domain && !this._packageName) return "";
 		if (!this._domain) return `${this._packageName}`;
+		if (!this._packageName) return this._domain;
 		return `${this._domain}.${this._packageName}`;
 	}
 

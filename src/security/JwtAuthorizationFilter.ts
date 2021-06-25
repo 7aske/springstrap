@@ -11,6 +11,7 @@ export default class JwtAuthorizationFilter extends JavaClass {
 			"org.springframework.security.authentication.AuthenticationManager",
 			"org.springframework.security.core.Authentication",
 			"org.springframework.security.core.context.SecurityContextHolder",
+			"org.springframework.security.core.AuthenticationException",
 			"org.springframework.security.web.authentication.www.BasicAuthenticationFilter",
 			"javax.servlet.FilterChain",
 			"javax.servlet.ServletException",
@@ -34,8 +35,10 @@ export default class JwtAuthorizationFilter extends JavaClass {
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws IOException, ServletException {
-        Authentication auth = getAuthenticationManager().authenticate(jwtProvider.getAuthentication(req));
-        SecurityContextHolder.getContext().setAuthentication(auth);
+        try {
+			Authentication auth = getAuthenticationManager().authenticate(jwtProvider.getAuthentication(req));
+			SecurityContextHolder.getContext().setAuthentication(auth);
+        } catch (AuthenticationException ignored) {}
         filterChain.doFilter(req, res);
     }`);
 	}

@@ -2,11 +2,11 @@ import JavaClass from "../def/JavaClass";
 import { uncapitalize } from "../utils";
 
 export default class ServletInitializer extends JavaClass {
-	private _sourceClassName: string;
+	private readonly _sourceClassName: string;
 
 	constructor(domain: string, options: SpringStrapOptions, sourceClassName: string) {
 		super(domain, "", options);
-		this._sourceClassName;
+		this._sourceClassName = sourceClassName;
 	}
 
 	get className(): string {

@@ -119,7 +119,7 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 	}
 
 	const isNotIgnoredOrMtmTable = (tableDef: DDLTable) => {
-		return !(options.ignore ?? []).some(ignore => ignore === tableDef.name) && !Entity.isMtmTable(tableDef);
+		return (options.ignore ?? []).some(ignore => ignore === tableDef.name) && !Entity.isMtmTable(tableDef);
 	};
 
 	jsonDDL.filter(isNotIgnoredOrMtmTable).forEach(tableDef => {

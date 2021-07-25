@@ -37,7 +37,7 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 		throw new Error(`springstrap: invalid domain: '${options.domain}'\n`);
 	}
 
-	if (pomXmlOptions.name) {
+	if (options.pom && pomXmlOptions.name) {
 		options.domain += "." + snakeToCamel(pomXmlOptions.name);
 	}
 

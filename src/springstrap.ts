@@ -37,11 +37,6 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 		throw new Error(`springstrap: invalid domain: '${options.domain}'\n`);
 	}
 
-	if (options.pom && pomXmlOptions.name) {
-		options.domain += "." + snakeToCamel(pomXmlOptions.name);
-	}
-
-
 	const DEFAULT_DEPS = [options.type, "spring-boot", "spring-data-jpa"];
 	const depsSet = new Set([...(pomXmlOptions.deps ?? []), ...DEFAULT_DEPS]);
 

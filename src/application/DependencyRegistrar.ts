@@ -3,7 +3,7 @@ const dependencyRegistrar: Record<string, PomXmlDependency[]> = {
 		{
 			artifactId: "spring-boot-starter-parent",
 			groupId: "org.springframework.boot",
-			version: "2.5.1",
+			version: "2.5.5",
 			relativePath: true,
 		}
 	],
@@ -38,7 +38,7 @@ const dependencyRegistrar: Record<string, PomXmlDependency[]> = {
 		{
 			groupId: "com.auth0",
 			artifactId: "java-jwt",
-			version: "3.10.3"
+			version: "3.18.2"
 		}
 	],
 	"swagger": [
@@ -92,6 +92,7 @@ const dependencyRegistrar: Record<string, PomXmlDependency[]> = {
 		{
 			groupId: "org.projectlombok",
 			artifactId: "lombok",
+			version: "1.18.20",
 			optional: true,
 		},
 	],

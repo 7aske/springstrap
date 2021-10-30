@@ -20,4 +20,5 @@ declare interface SpringStrapOptions {
 	sort?: boolean;
 	pom?: boolean;
 	pomOptions?: PomXmlOptions
+	noBoilerplate?: boolean
 }

@@ -37,11 +37,6 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 		throw new Error(`springstrap: invalid domain: '${options.domain}'\n`);
 	}
 
-	if (pomXmlOptions.name) {
-		options.domain += "." + snakeToCamel(pomXmlOptions.name);
-	}
-
-
 	const DEFAULT_DEPS = [options.type, "spring-boot", "spring-data-jpa"];
 	const depsSet = new Set([...(pomXmlOptions.deps ?? []), ...DEFAULT_DEPS]);
 
@@ -152,7 +147,7 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 	});
 
 	// @formatter:off
-	if (options.auditable) {
+	if (options.auditable && !options.noBoilerplate) {
 		const auditable =    new Auditable(options.domain);
 		const auditorAware = new AuditorAware(options.domain);
 		const config =       new Config(options.domain, options);
@@ -166,7 +161,7 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 		out.push({filePath: configFilename,       content: config.code});
 	}
 
-	if (options.swagger) {
+	if (options.swagger && !options.noBoilerplate) {
 		const swagger = new Swagger(options.domain);
 
 		const swaggerFilename = join(configDir, swagger.fileName);
@@ -175,7 +170,7 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 	}
 
 	// specification
-	if (options.specification) {
+	if (options.specification && !options.noBoilerplate) {
 		const criteriaParser =                new CriteriaParser(options.domain, options);
 		const genericSpecification =          new GenericSpecification(options.domain, options);
 		const genericSpecificationBuilder =   new GenericSpecificationBuilder(options.domain, options);
@@ -199,7 +194,7 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 	}
 
 	// security
-	if (options.security) {
+	if (options.security && !options.noBoilerplate) {
 		const securityConfig =          new SecurityConfig(options.domain, options);
 		const jwtProvider =             new JwtProvider(options.domain, options);
 		const jwtAuthorizationFilter =  new JwtAuthorizationFilter(options.domain, options);
@@ -217,7 +212,7 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 	}
 
 	// sort
-	if (options.sort) {
+	if (options.sort && !options.noBoilerplate) {
 		const sortConverter = new SortConverter(options.domain, options);
 
 		const sortConverterFilename = join(converterDir, sortConverter.fileName);
@@ -226,7 +221,7 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 	}
 
 	// pom
-	if (options.pom) {
+	if (options.pom && !options.noBoilerplate) {
 		const application =           new Application(options.domain, options);
 		const applicationTests =      new ApplicationTests(options.domain, options);
 		const servletInitializer =    new ServletInitializer(options.domain, options, application.className);

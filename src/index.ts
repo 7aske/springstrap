@@ -44,6 +44,7 @@ program
 	.option("--java-version <javaVersion>", "java version", "11")
 	.option("--packaging <packaging>", "packaging", "war")
 	.option("--description <description>", "description", "Springstrap application")
+	.option("--no-boilerplate", "skip generating boilerplate class", true)
 	.parse(process.argv);
 
 const opts = program.opts();
@@ -57,6 +58,7 @@ if (opts.enums && !fs.existsSync(opts.enums)) {
 	process.stderr.write(`${PROG}: no such file or directory: '${opts.filename}'\n`);
 	process.exit(2);
 }
+
 
 // @formatter:off
 const options: SpringStrapOptions = {
@@ -79,7 +81,8 @@ const options: SpringStrapOptions = {
 	specification: opts.specification,
 	sort:          opts.sort,
 	pom:           opts.pom,
-	filename:      opts.filename
+	filename:      opts.filename,
+	noBoilerplate: !opts.boilerplate,
 };
 
 if (opts.all) {
@@ -90,7 +93,7 @@ if (opts.all) {
 	options.controller = true;
 }
 
-if (opts.name) {
+if (options.pom && opts.name) {
 	options.domain += "." + snakeToCamel(opts.name);
 }
 

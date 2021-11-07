@@ -27,7 +27,6 @@ import { Enum } from "./enum";
 import { generatePomXml } from "./application/pom";
 import { join } from "path";
 import { parseDDL } from "./parser";
-import { snakeToCamel } from "./utils";
 
 const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: PomXmlOptions): GeneratedFile[] => {
 	const out: GeneratedFile[] = [];
@@ -61,20 +60,20 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 
 	const rootDir = options.output ? options.output : process.cwd();
 	// @formatter:off
-	const domainDir =        join(rootDir, "src/main/java", ...options.domain.split("."));
-	const resourcesDir =     join(rootDir, "src/main/resources");
-	const domainTestsDir =   join(rootDir, "src/test/java", ...options.domain.split("."));
-	const entityDir =        join(domainDir, "entity");
-	const entityDomainDir =  join(domainDir, "entity/domain");
-	const serviceDir =       join(domainDir, "service");
-	const serviceImplDir =   join(domainDir, "service/impl");
-	const controllerDir =    join(domainDir, "controller");
-	const repositoryDir =    join(domainDir, "repository");
+	const domainDir        = join(rootDir, "src/main/java", ...options.domain.split("."));
+	const resourcesDir     = join(rootDir, "src/main/resources");
+	const domainTestsDir   = join(rootDir, "src/test/java", ...options.domain.split("."));
+	const entityDir        = join(domainDir, "entity");
+	const entityDomainDir  = join(domainDir, "entity/domain");
+	const serviceDir       = join(domainDir, "service");
+	const serviceImplDir   = join(domainDir, "service/impl");
+	const controllerDir    = join(domainDir, "controller");
+	const repositoryDir    = join(domainDir, "repository");
 	const specificationDir = join(domainDir, "specification");
-	const configDir =        join(domainDir, "config");
-	const securityDir =      join(domainDir, "security");
-	const beanDir =          join(domainDir, "bean");
-	const converterDir =     join(domainDir, "bean/converter");
+	const configDir        = join(domainDir, "config");
+	const securityDir      = join(domainDir, "security");
+	const beanDir          = join(domainDir, "bean");
+	const converterDir     = join(domainDir, "bean/converter");
 	// @formatter:on
 
 	console.log("root   " + rootDir);

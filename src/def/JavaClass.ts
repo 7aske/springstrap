@@ -15,8 +15,10 @@ export default abstract class JavaClass {
 		"lombok.*",
 	];
 	protected static readonly LOMBOK_ANNOTATIONS = [
-		"Data",
-		`EqualsAndHashCode(callSuper = false, onlyExplicitlyIncluded = true)`,
+		"Getter",
+		"Setter",
+		"ToString",
+		"RequiredArgsConstructor",
 		"NoArgsConstructor",
 	];
 
@@ -74,7 +76,7 @@ export default abstract class JavaClass {
 				out += `\n\t${this.className}(String name) {\n\t\tthis.name = name;\n\t}\n`;
 				out += `\n\tpublic String getName() {\n\t\treturn name;\n\t}\n`;
 			} else if (!this.package.endsWith("config") && this.type !== "interface" && this.className !== "Auditable") {
-				out += `\n\t${this.className}() {}\n`;
+				out += `\n\tpublic ${this.className}() {}\n\n`;
 			}
 		}
 		out += classImpl;

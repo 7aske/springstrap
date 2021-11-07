@@ -3,6 +3,8 @@ import Column from "./column";
 import MTMColumn from "./mtmcolumn";
 import { Enum } from "./enum";
 import JavaClass from "./def/JavaClass";
+import { BasicMethodBuilder } from "./methodBuilder";
+import EmbeddedId from "./embeddedid";
 
 const {snakeToCamel} = require("./utils");
 
@@ -14,7 +16,8 @@ export default class Entity extends JavaClass {
 	private readonly _columns: Column[];
 	private readonly _mtmColumns: MTMColumn[];
 	private readonly _enums: Enum[];
-	private readonly _hasRoles:boolean;
+	private readonly _hasRoles: boolean;
+	private readonly _embeddedId: EmbeddedId;
 
 	constructor({name, columns, primaryKey, foreignKeys, options}: DDLTable,
 	            domain: string,
@@ -43,14 +46,14 @@ export default class Entity extends JavaClass {
 				"org.springframework.security.core.GrantedAuthority",
 				"org.springframework.security.core.userdetails.UserDetails",
 			);
-			this.interfaces.push("UserDetails")
+			this.interfaces.push("UserDetails");
 		}
 
 		if (this.options.security && name === "role") {
 			this.imports.push(
 				"org.springframework.security.core.GrantedAuthority",
 			);
-			this.interfaces.push("GrantedAuthority")
+			this.interfaces.push("GrantedAuthority");
 		}
 
 		if (this.options.lombok) {
@@ -76,17 +79,30 @@ export default class Entity extends JavaClass {
 		this._id = this._columns.filter(c => c.primaryKey)!;
 
 		this._hasRoles = this.mtmColumns.some(col => col.target === "role");
+
+		this._embeddedId = new EmbeddedId(this, this.options);
 	}
 
 	public get code() {
 		const domain = super.domain;
 		if (this._enums.length > 0) this.imports.push(`${domain ? domain + "." : ""}entity.domain.*`);
 		let code = "\t";
-		code += `${this._columns.map(col => `${col.code.split("\n").join("\n\t")}`).join("")}`;
+		if (this.id.length == 1) {
+			code += `${this._columns.map(col => `${col.code.split("\n").join("\n\t")}`).join("")}`;
+		} else {
+			code += "@EmbeddedId\n"
+			code += `\tprivate ${this._embeddedId.className} ${this._embeddedId.varName};\n\n`
+			code += this._embeddedId.code;
+		}
 		code += `${this._enums.map(col => `${col.fieldCode.split("\n").join("\n\t")}`).join("")}`;
 		code += `${this._mtmColumns.map(col => `${col.code.split("\n").join("\n\t")}`).join("")}`;
 		if (!this.options.lombok) {
-			code += `${this._columns.map(col => col.getter() + col.setter()).join("\n")}`;
+			code += "\n"
+			if (this.id.length > 1) {
+				code += `${this._columns.filter(c => !c.primaryKey).map(col => col.getter() + col.setter()).join("\n")}`;
+			} else {
+				code += `${this._columns.map(col => col.getter() + col.setter()).join("\n")}`;
+			}
 		}
 
 		if (this.options.security && this.className === "User") {
@@ -135,7 +151,53 @@ export default class Entity extends JavaClass {
     public String getAuthority() {
         return String.format("role_%s", name)
                 .toUpperCase(Locale.ROOT);
-    }\n\n`
+    }\n\n`;
+		}
+
+		code += "\n"
+
+
+		if (this.id.length == 1) {
+
+			code += new BasicMethodBuilder()
+				.annotation("Override")
+				.public()
+				.return("boolean")
+				.name("equals")
+				.arg(["Object", "o"])
+				.implementation(`\tif (this == o) return true;\n\t\tif (o == null || getClass() != o.getClass()) return false;\n\t\t${this.className} ${this.varName} = (${this.className}) o;\n\t\treturn ${this.id.map(id => `${id.foreignKey ? id.varName : "id"}.equals(${this.varName}.${id.foreignKey ? id.varName : "id"})`).join(" && ")};\n`)
+				.build()
+				.generate();
+
+			code += new BasicMethodBuilder()
+				.annotation("Override")
+				.public()
+				.return("int")
+				.name("hashCode")
+				.implementation(`\treturn Objects.hash(${this.id.map(id => `${id.foreignKey ? id.varName : "id"}`).join(", ")});\n`)
+				.build()
+				.generate();
+
+		} else {
+
+			code += new BasicMethodBuilder()
+				.annotation("Override")
+				.public()
+				.return("boolean")
+				.name("equals")
+				.arg(["Object", "o"])
+				.implementation(`\tif (this == o) return true;\n\t\tif (o == null || getClass() != o.getClass()) return false;\n\t\t${this.className} ${this.varName} = (${this.className}) o;\n\t\treturn ${this._embeddedId.varName}.equals(${this.varName}.${this._embeddedId.varName});\n`)
+				.build()
+				.generate();
+
+			code += new BasicMethodBuilder()
+				.annotation("Override")
+				.public()
+				.return("int")
+				.name("hashCode")
+				.implementation(`\treturn Objects.hash(${this._embeddedId.varName});\n`)
+				.build()
+				.generate();
 		}
 
 		return this.wrap(code);
@@ -188,6 +250,10 @@ export default class Entity extends JavaClass {
 
 	public get enums() {
 		return this._enums;
+	}
+
+	public get embeddedId() {
+		return this._embeddedId;
 	}
 
 	/**

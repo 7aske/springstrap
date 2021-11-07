@@ -101,7 +101,7 @@ export default class ServiceImpl extends JavaClass {
 
 		code += "\t@Override\n";
 		code += `\tpublic ${ent.className} findById(${ent.idArgsString}) {\n`;
-		code += `\t\treturn ${snakeToCamel(ent.tableName)}Repository.findById(${ent.idVars})\n\t\t\t\t.orElseThrow(() -> new NoSuchElementException("${this._service.className}.notFound"));\n`;
+		code += `\t\treturn ${snakeToCamel(ent.tableName)}Repository.findById(${ent.id.length === 1 ? ent.idVars : `new ${ent.className}.${ent.embeddedId.className}(${ent.idVars})`})\n\t\t\t\t.orElseThrow(() -> new NoSuchElementException("${this._service.className}.notFound"));\n`;
 		code += "\t}\n\n";
 
 		code += "\t@Override\n";
@@ -116,7 +116,7 @@ export default class ServiceImpl extends JavaClass {
 
 		code += "\t@Override\n";
 		code += `\tpublic void deleteById(${ent.idArgsString}) {\n`;
-		code += `\t\t${snakeToCamel(ent.tableName)}Repository.deleteById(${ent.idVars});\n`;
+		code += `\t\t${snakeToCamel(ent.tableName)}Repository.deleteById(${ent.id.length === 1 ? ent.idVars : `new ${ent.className}.${ent.embeddedId.className}(${ent.idVars})`});\n`;
 		code += "\t}\n\n";
 
 		ent.mtmColumns.forEach(col => {
@@ -154,7 +154,7 @@ export default class ServiceImpl extends JavaClass {
 				.return("UserDetails")
 				.arg(["String", "username"])
 				.throws("UsernameNotFoundException")
-				.implementation("\treturn userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(\"User not found\"));\n")
+				.implementation("\treturn userRepository.findByUsername(username)\n\t\t\t\t.orElseThrow(() -> new UsernameNotFoundException(\"User not found\"));\n")
 				.build()
 				.generate();
 		}

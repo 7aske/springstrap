@@ -27,21 +27,15 @@ export default class Column extends JavaAttribute {
 
 	public get code(): string {
 		let out = "";
-		if (this._primaryKey && this._foreignKey) {
-			out += "@EmbeddedId\n";
-			out += `@Column(name = "${this._name}")\n`;
-			out += `private ${this._javaType} ${this._varname};\n`;
-		} else if (this._primaryKey) {
+		if (this._primaryKey && !this._foreignKey) {
 			out += "@Id\n";
 			if (this.options.autoincrement)
 				out += "@GeneratedValue(strategy = GenerationType.IDENTITY)\n";
-			if (this.useLombok)
-				out += `@EqualsAndHashCode.Include\n`;
 			out += `@Column(name = "${this._name}")\n`;
-			out += `private ${this._javaType} id;\n`;
+			out += `private ${this._javaType} ${this.varName.endsWith("Id") || this.varName.startsWith("Id") ? "id" : this.varName};\n`;
 		} else if (this._foreignKey) {
-			out += `@JoinColumn(name = "${this._name}", referencedColumnName = "${this._foreignKey.reference.columns[0].column}")\n`;
 			out += `@ManyToOne\n`;
+			out += `@JoinColumn(name = "${this._name}", referencedColumnName = "${this._foreignKey.reference.columns[0].column}")\n`;
 			out += `private ${this._javaType} ${this._varname};\n`;
 		} else {
 			out += `@Column(name = "${this._name}")\n`;
@@ -81,17 +75,17 @@ export default class Column extends JavaAttribute {
 	}
 
 	getter() {
-		let capitalizedVarname = capitalize(this.varName);
+		let capitalizedVarname = this._varname.endsWith("Id") ? "Id" : capitalize(this.varName);
 		let out = `\tpublic ${this._javaType} get${capitalizedVarname}() {\n`;
-		out += `\t\treturn ${this._varname};\n`;
+		out += `\t\treturn ${this._varname.endsWith("Id") ? "id" : this._varname};\n`;
 		out += `\t}\n\n`;
 		return out;
 	}
 
 	setter() {
-		let capitalizedVarname = this._varname.charAt(0).toUpperCase() + this._varname.substring(1);
-		let out = `\tpublic void set${capitalizedVarname}(${this._javaType} ${this._varname}) {\n`;
-		out += `\t\tthis.${this._varname} = ${this._varname};\n`;
+		let capitalizedVarname = this._varname.endsWith("Id") ? "Id" : this._varname.charAt(0).toUpperCase() + this._varname.substring(1);
+		let out = `\tpublic void set${capitalizedVarname}(${this._javaType} ${this._varname.endsWith("Id") ? "id" : this._varname}) {\n`;
+		out += `\t\tthis.${this._varname.endsWith("Id") ? "id" : this._varname} = ${this._varname.endsWith("Id") ? "id" : this._varname};\n`;
 		out += `\t}\n\n`;
 		return out;
 	}

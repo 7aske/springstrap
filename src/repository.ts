@@ -19,7 +19,7 @@ export default class Repository extends JavaClass {
 			"Repository",
 		];
 		super.superClasses = [
-			`JpaRepository<${entity.className}, ${entity.columns.find(c => c.primaryKey)!.javaType}>`,
+			`JpaRepository<${entity.className}, ${entity.id.length === 1 ? entity.id[0].javaType : `${entity.className}.${entity.embeddedId.className}`}>`,
 		];
 		super.type = "interface";
 

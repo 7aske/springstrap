@@ -14,10 +14,10 @@ export default class MTMColumn {
 	constructor(ref: DDLManyToMany) {
 		this._inverseJoinName = ref.target_column;
 		this._joinName = ref.source_column;
-		this._targetClassName = snakeToCamel(ref.target, true);
-		this._targetVarName = plural(snakeToCamel(ref.target));
+		this._targetClassName = snakeToCamel(ref.target.toLowerCase(), true);
+		this._targetVarName = plural(snakeToCamel(ref.target.toLowerCase()));
 		this._target = ref.target;
-		this._className = snakeToCamel(ref.source, true);
+		this._className = snakeToCamel(ref.source.toLowerCase(), true);
 		this._name = ref.source;
 		this._reference = ref.name;
 	}

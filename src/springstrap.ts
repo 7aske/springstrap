@@ -122,17 +122,17 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 			const manyToMany = relations.filter(rel => rel.source === tableDef.name);
 			const entityEnums = enums.filter(e => e.tables.some(t => t === tableDef.name));
 
-			const entity =      new Entity(tableDef, options.domain, manyToMany, entityEnums, options);
-			const repository =  new Repository(entity, options);
-			const service =     new Service(entity, options);
+			const entity      = new Entity(tableDef, options.domain, manyToMany, entityEnums, options);
+			const repository  = new Repository(entity, options);
+			const service     = new Service(entity, options);
 			const serviceImpl = new ServiceImpl(service, repository, options.domain, options);
-			const controller =  new Controller(service, options.domain, options);
+			const controller  = new Controller(service, options.domain, options);
 
-			const entityFilename =      join(entityDir, entity.fileName);
-			const repositoryFilename =  join(repositoryDir, repository.fileName);
-			const serviceFilename =     join(serviceDir, service.fileName);
+			const entityFilename      = join(entityDir, entity.fileName);
+			const repositoryFilename  = join(repositoryDir, repository.fileName);
+			const serviceFilename     = join(serviceDir, service.fileName);
 			const serviceImplFilename = join(serviceImplDir, serviceImpl.fileName);
-			const controllerFilename =  join(controllerDir, controller.fileName);
+			const controllerFilename  = join(controllerDir, controller.fileName);
 
 			if (options.entity)      out.push({filePath: entityFilename,      content: entity.code});
 			if (options.repository)  out.push({filePath: repositoryFilename,  content: repository.code});
@@ -147,13 +147,13 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 
 	// @formatter:off
 	if (options.auditable && !options.noBoilerplate) {
-		const auditable =    new Auditable(options.domain);
+		const auditable    = new Auditable(options.domain);
 		const auditorAware = new AuditorAware(options.domain);
-		const config =       new Config(options.domain, options);
+		const config       = new Config(options.domain, options);
 
-		const auditableFilename =    join(entityDir, auditable.fileName);
+		const auditableFilename    = join(entityDir, auditable.fileName);
 		const auditorAwareFilename = join(configDir, auditorAware.fileName);
-		const configFilename =       join(configDir, config.fileName);
+		const configFilename       = join(configDir, config.fileName);
 
 		out.push({filePath: auditableFilename,    content: auditable.code});
 		out.push({filePath: auditorAwareFilename, content: auditorAware.code});
@@ -170,19 +170,19 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 
 	// specification
 	if (options.specification && !options.noBoilerplate) {
-		const criteriaParser =                new CriteriaParser(options.domain, options);
-		const genericSpecification =          new GenericSpecification(options.domain, options);
-		const genericSpecificationBuilder =   new GenericSpecificationBuilder(options.domain, options);
+		const criteriaParser                = new CriteriaParser(options.domain, options);
+		const genericSpecification          = new GenericSpecification(options.domain, options);
+		const genericSpecificationBuilder   = new GenericSpecificationBuilder(options.domain, options);
 		const genericSpecificationConverter = new GenericSpecificationConverter(options.domain, options);
-		const searchCriteria =                new SearchCriteria(options.domain, options);
-		const searchOperation =               new SearchOperation(options.domain, options);
+		const searchCriteria                = new SearchCriteria(options.domain, options);
+		const searchOperation               = new SearchOperation(options.domain, options);
 
-		const criteriaParserFilename =                join(specificationDir, criteriaParser.fileName);
-		const genericSpecificationFilename =          join(specificationDir, genericSpecification.fileName);
-		const genericSpecificationBuilderFilename =   join(specificationDir, genericSpecificationBuilder.fileName);
+		const criteriaParserFilename                = join(specificationDir, criteriaParser.fileName);
+		const genericSpecificationFilename          = join(specificationDir, genericSpecification.fileName);
+		const genericSpecificationBuilderFilename   = join(specificationDir, genericSpecificationBuilder.fileName);
 		const genericSpecificationConverterFilename = join(specificationDir, genericSpecificationConverter.fileName);
-		const searchCriteriaFilename =                join(specificationDir, searchCriteria.fileName);
-		const searchOperationFilename =               join(specificationDir, searchOperation.fileName);
+		const searchCriteriaFilename                = join(specificationDir, searchCriteria.fileName);
+		const searchOperationFilename               = join(specificationDir, searchOperation.fileName);
 
 		out.push({filePath: criteriaParserFilename,                content: criteriaParser.code});
 		out.push({filePath: genericSpecificationFilename,          content: genericSpecification.code});
@@ -194,14 +194,14 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 
 	// security
 	if (options.security && !options.noBoilerplate) {
-		const securityConfig =          new SecurityConfig(options.domain, options);
-		const jwtProvider =             new JwtProvider(options.domain, options);
-		const jwtAuthorizationFilter =  new JwtAuthorizationFilter(options.domain, options);
+		const securityConfig          = new SecurityConfig(options.domain, options);
+		const jwtProvider             = new JwtProvider(options.domain, options);
+		const jwtAuthorizationFilter  = new JwtAuthorizationFilter(options.domain, options);
 		const jwtAuthenticationFilter = new JwtAuthenticationFilter(options.domain, options);
 
-		const securityConfigFilename =          join(securityDir, securityConfig.fileName);
-		const jwtProviderFilename =             join(securityDir, jwtProvider.fileName);
-		const jwtAuthorizationFilterFilename =  join(securityDir, jwtAuthorizationFilter.fileName);
+		const securityConfigFilename          = join(securityDir, securityConfig.fileName);
+		const jwtProviderFilename             = join(securityDir, jwtProvider.fileName);
+		const jwtAuthorizationFilterFilename  = join(securityDir, jwtAuthorizationFilter.fileName);
 		const jwtAuthenticationFilterFilename = join(securityDir, jwtAuthenticationFilter.fileName);
 
 		out.push({filePath: securityConfigFilename,          content: securityConfig.code});
@@ -221,17 +221,17 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 
 	// pom
 	if (options.pom && !options.noBoilerplate) {
-		const application =           new Application(options.domain, options);
-		const applicationTests =      new ApplicationTests(options.domain, options);
-		const servletInitializer =    new ServletInitializer(options.domain, options, application.className);
+		const application           = new Application(options.domain, options);
+		const applicationTests      = new ApplicationTests(options.domain, options);
+		const servletInitializer    = new ServletInitializer(options.domain, options, application.className);
 		const applicationProperties = new PropertiesFile("application", options, pomXmlOptions);
-		const pomXml =                generatePomXml(pomXmlOptions);
+		const pomXml                = generatePomXml(pomXmlOptions);
 
-		const applicationFilename =           join(domainDir, application.fileName);
-		const applicationTestsFilename =      join(domainTestsDir, applicationTests.fileName);
-		const servletInitializerFilename =    join(domainDir, servletInitializer.fileName);
+		const applicationFilename           = join(domainDir, application.fileName);
+		const applicationTestsFilename      = join(domainTestsDir, applicationTests.fileName);
+		const servletInitializerFilename    = join(domainDir, servletInitializer.fileName);
 		const applicationPropertiesFilename = join(resourcesDir, applicationProperties.fileName)
-		const pomXmlFilename =                join(rootDir, "pom.xml");
+		const pomXmlFilename                = join(rootDir, "pom.xml");
 
 		out.push({filePath: applicationFilename,           content: application.code});
 		out.push({filePath: applicationTestsFilename,      content: applicationTests.code});

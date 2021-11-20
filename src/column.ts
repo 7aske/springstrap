@@ -1,5 +1,5 @@
 import { typeConv } from "./types";
-import { snakeToCamel, capitalize } from "./utils";
+import { snakeToCamel, capitalize, uncapitalize } from "./utils";
 import JavaAttribute from "./def/JavaAttribute";
 
 export default class Column extends JavaAttribute {
@@ -21,8 +21,11 @@ export default class Column extends JavaAttribute {
 		this._primaryKey = primaryKey;
 		this._javaType = this.typeConv();
 		this.useLombok = useLombok;
-		this._varname = snakeToCamel(name)
+		this._varname = snakeToCamel(this._name.toLowerCase())
 			.replace(/Fk$|^Fk/, "");
+		if (this._foreignKey) {
+			this._varname = uncapitalize(this._varname.replace(/^id/, ""));
+		}
 	}
 
 	public get code(): string {
@@ -32,7 +35,7 @@ export default class Column extends JavaAttribute {
 			if (this.options.autoincrement)
 				out += "@GeneratedValue(strategy = GenerationType.IDENTITY)\n";
 			out += `@Column(name = "${this._name}")\n`;
-			out += `private ${this._javaType} ${this.varName.endsWith("Id") || this.varName.startsWith("Id") ? "id" : this.varName};\n`;
+			out += `private ${this._javaType} ${this.varName.endsWith("Id") || this.varName.startsWith("id") ? "id" : this.varName};\n`;
 		} else if (this._foreignKey) {
 			out += `@ManyToOne\n`;
 			out += `@JoinColumn(name = "${this._name}", referencedColumnName = "${this._foreignKey.reference.columns[0].column}")\n`;
@@ -70,7 +73,7 @@ export default class Column extends JavaAttribute {
 
 	private typeConv() {
 		if (this._foreignKey)
-			return snakeToCamel(this._foreignKey.reference.table, true);
+			return snakeToCamel(this._foreignKey.reference.table.toLowerCase(), true);
 		return typeConv(this._type);
 	}
 

@@ -41,7 +41,7 @@ export default class Entity extends JavaClass {
 			"Serializable",
 		];
 
-		if (this.options.security && name === "user") {
+		if (this.options.security && name.toLowerCase() === "user") {
 			this.imports.push(
 				"org.springframework.security.core.GrantedAuthority",
 				"org.springframework.security.core.userdetails.UserDetails",
@@ -65,7 +65,7 @@ export default class Entity extends JavaClass {
 		}
 
 		this._tableName = name;
-		this._className = capitalize(snakeToCamel(name));
+		this._className = capitalize(snakeToCamel(name.toLowerCase()));
 		this._enums = enums.map(e => new Enum(domain, e, ssopt));
 		this._mtmColumns = mtmRel.map(rel => new MTMColumn(rel));
 		this._columns = columns

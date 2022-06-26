@@ -18,6 +18,8 @@ declare interface SpringStrapOptions {
 	enums?: EnumType[];
 	specification?: boolean;
 	sort?: boolean;
+	pageable?: boolean;
+	base?: boolean;
 	pom?: boolean;
 	pomOptions?: PomXmlOptions
 	noBoilerplate?: boolean

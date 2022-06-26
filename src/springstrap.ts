@@ -27,6 +27,9 @@ import { Enum } from "./enum";
 import { generatePomXml } from "./application/pom";
 import { join } from "path";
 import { parseDDL } from "./parser";
+import BaseRepository, {Exclude} from "./base/base-repository";
+import BaseService from "./base/base-service";
+import BaseServiceImpl from "./base/base-serviceimpl";
 
 const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: PomXmlOptions): GeneratedFile[] => {
 	const out: GeneratedFile[] = [];
@@ -60,20 +63,21 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 
 	const rootDir = options.output ? options.output : process.cwd();
 	// @formatter:off
-	const domainDir        = join(rootDir, "src/main/java", ...options.domain.split("."));
-	const resourcesDir     = join(rootDir, "src/main/resources");
-	const domainTestsDir   = join(rootDir, "src/test/java", ...options.domain.split("."));
-	const entityDir        = join(domainDir, "entity");
-	const entityDomainDir  = join(domainDir, "entity/domain");
-	const serviceDir       = join(domainDir, "service");
-	const serviceImplDir   = join(domainDir, "service/impl");
-	const controllerDir    = join(domainDir, "controller");
-	const repositoryDir    = join(domainDir, "repository");
-	const specificationDir = join(domainDir, "specification");
-	const configDir        = join(domainDir, "config");
-	const securityDir      = join(domainDir, "security");
-	const beanDir          = join(domainDir, "bean");
-	const converterDir     = join(domainDir, "bean/converter");
+	const domainDir          = join(rootDir, "src/main/java", ...options.domain.split("."));
+	const resourcesDir       = join(rootDir, "src/main/resources");
+	const domainTestsDir     = join(rootDir, "src/test/java", ...options.domain.split("."));
+	const entityDir          = join(domainDir, "entity");
+	const entityDomainDir    = join(domainDir, "entity/domain");
+	const serviceDir         = join(domainDir, "service");
+	const serviceImplDir     = join(domainDir, "service/impl");
+	const controllerDir      = join(domainDir, "controller");
+	const repositoryDir      = join(domainDir, "repository");
+	const specificationDir   = join(domainDir, "specification");
+	const configDir          = join(domainDir, "config");
+	const securityDir        = join(domainDir, "security");
+	const beanDir            = join(domainDir, "bean");
+	const converterDir       = join(domainDir, "bean/converter");
+	const genericDir         = join(domainDir, "generic");
 	// @formatter:on
 
 	console.log("root   " + rootDir);
@@ -149,15 +153,20 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 	if (options.auditable && !options.noBoilerplate) {
 		const auditable    = new Auditable(options.domain);
 		const auditorAware = new AuditorAware(options.domain);
-		const config       = new Config(options.domain, options);
 
 		const auditableFilename    = join(entityDir, auditable.fileName);
 		const auditorAwareFilename = join(configDir, auditorAware.fileName);
-		const configFilename       = join(configDir, config.fileName);
 
 		out.push({filePath: auditableFilename,    content: auditable.code});
 		out.push({filePath: auditorAwareFilename, content: auditorAware.code});
-		out.push({filePath: configFilename,       content: config.code});
+	}
+
+	if ((options.base || options.auditable) && !options.noBoilerplate) {
+		const config = new Config(options.domain, options);
+
+		const configFilename = join(configDir, config.fileName);
+
+		out.push({filePath: configFilename, content: config.code});
 	}
 
 	if (options.swagger && !options.noBoilerplate) {
@@ -238,6 +247,23 @@ const springstrap = (sql: string, options: SpringStrapOptions, pomXmlOptions: Po
 		out.push({filePath: servletInitializerFilename,    content: servletInitializer.code});
 		out.push({filePath: pomXmlFilename,                content: pomXml});
 		out.push({filePath: applicationPropertiesFilename, content: applicationProperties.content});
+	}
+
+	if (options.base && !options.noBoilerplate) {
+		const baseRepository  = new BaseRepository(options);
+		const baseService     = new BaseService(options);
+		const baseServiceImpl = new BaseServiceImpl(baseService, baseRepository, options.domain, options);
+		const exclude         = new Exclude(options);
+
+		const baseRepositoryFilename  = join(genericDir, baseRepository.fileName);
+		const baseServiceFilename     = join(genericDir, baseService.fileName);
+		const baseServiceImplFilename = join(genericDir, baseServiceImpl.fileName);
+		const excludeFilename         = join(genericDir, exclude.fileName)
+
+		out.push({filePath: baseRepositoryFilename,  content: baseRepository.code});
+		out.push({filePath: baseServiceFilename,     content: baseService.code});
+		out.push({filePath: baseServiceImplFilename, content: baseServiceImpl.code});
+		out.push({filePath: excludeFilename,         content: exclude.code});
 	}
 	// @formatter:on
 

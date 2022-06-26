@@ -1,5 +1,5 @@
 import Entity from "./entity";
-import { uncapitalize } from "./utils";
+import {uncapitalize} from "./utils";
 import JavaClass from "./def/JavaClass";
 
 export default class Repository extends JavaClass {
@@ -10,17 +10,28 @@ export default class Repository extends JavaClass {
 		super(options.domain, "repository", options);
 		this._className = entity.className + "Repository";
 		this._entity = entity;
-		super.imports = [
-			"org.springframework.data.jpa.repository.*",
-			"org.springframework.stereotype.Repository",
-			`${options.domain ? options.domain + "." : ""}entity.${entity.className}`,
-		];
-		super.annotations = [
-			"Repository",
-		];
-		super.superClasses = [
-			`JpaRepository<${entity.className}, ${entity.id.length === 1 ? entity.id[0].javaType : `${entity.className}.${entity.embeddedId.className}`}>`,
-		];
+		if (options.base) {
+			super.imports = [
+				`${options.domain ? options.domain + "." : ""}generic.*`,
+				`${options.domain ? options.domain + "." : ""}entity.${entity.className}`
+			];
+			super.superClasses = [
+				`BaseRepository<${entity.className}>`
+			];
+		} else {
+			super.imports = [
+				"org.springframework.data.jpa.repository.*",
+				"org.springframework.stereotype.Repository",
+				`${options.domain ? options.domain + "." : ""}entity.${entity.className}`
+			];
+			super.superClasses = [
+				`JpaRepository<${entity.className}, ${entity.id.length === 1 ? entity.id[0].javaType : `${entity.className}.${entity.embeddedId.className}`}>`,
+			];
+
+			if (options.specification) {
+				super.superClasses.push(`JpaSpecificationExecutor<${entity.className}>`);
+			}
+		}
 		super.type = "interface";
 
 		if (this.options.security && this.className === "UserRepository") {
@@ -28,12 +39,6 @@ export default class Repository extends JavaClass {
 				"java.util.Optional",
 			);
 		}
-
-
-		if (options.specification) {
-			super.superClasses.push(`JpaSpecificationExecutor<${entity.className}>`);
-		}
-
 	}
 
 	public get className(): string {

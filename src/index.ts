@@ -35,6 +35,8 @@ program
 	.option("-u, --security", "add Spring Security JWT implementation")
 	.option("-p, --specification", "adds JPA specification api based controller endpoints")
 	.option("-r, --sort", "adds sort to controller endpoints")
+	.option("-g, --pageable", "adds pageable to controller endpoints")
+	.option("-b, --base", "adds base classes to services")
 	.option("-e, --enums <enumfile>", "load enum definitions from a json file")
 	.option("--ignore <ignore...>", "ignore selected tables")
 	.option("--tables <tables...>", "generated only listed tables")
@@ -74,6 +76,8 @@ const options: SpringStrapOptions = {
 	repository:    opts.repository,
 	service:       opts.service,
 	serviceimpl:   opts.serviceimpl,
+	pageable:      opts.pageable,
+	base:          opts.base,
 	security:      opts.security,
 	swagger:       opts.swagger,
 	tables:        opts.tables,

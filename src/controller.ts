@@ -60,12 +60,32 @@ export default class Controller extends JavaClass {
 			`${serviceName} ${serviceVarName}`,
 		];
 
+		if (this.options.specification && this.options.sort && this.options.pageable) {
+			imports.push("org.springframework.data.jpa.domain.Specification");
+			imports.push("org.springframework.data.domain.Sort");
+			imports.push("org.springframework.data.domain.Pageable");
+		} else if (this.options.specification && this.options.sort && !this.options.pageable) {
+			imports.push("org.springframework.data.jpa.domain.Specification");
+			imports.push("org.springframework.data.domain.Sort");
+		} else if (this.options.specification && !this.options.sort && !this.options.pageable) {
+			imports.push("org.springframework.data.jpa.domain.Specification");
+		} else if (this.options.specification && !this.options.sort && this.options.pageable) {
+			imports.push("org.springframework.data.jpa.domain.Specification");
+			imports.push("org.springframework.data.domain.Pageable");
+		} else if (!this.options.specification && this.options.sort && this.options.pageable) {
+			imports.push("org.springframework.data.domain.Sort");
+			imports.push("org.springframework.data.domain.Pageable");
+		} else if (!this.options.specification && !this.options.sort && this.options.pageable) {
+			imports.push("org.springframework.data.domain.Pageable");
+		} else if (!this.options.specification && this.options.sort && !this.options.pageable) {
+			imports.push("org.springframework.data.domain.Sort");
+		}
+
 		if (this.options.lombok) imports.push(...lombokImports);
 		if (!this.options.lombok) imports.push(...noLombokImports);
 		if (this.options.lombok) annotations.push(...lombokAnnotations);
 		if (this.options.swagger) imports.push(...swaggerAnnotations);
-		if (this.options.sort) imports.push("org.springframework.data.domain.Sort");
-		if (this.options.specification) imports.push("org.springframework.data.jpa.domain.Specification");
+
 		if (this._service.entity.enums.length > 0) imports.push(`${domain ? domain + "." : ""}entity.domain.*`);
 
 		let out = `package ${this.package};\n\n`;
@@ -82,18 +102,34 @@ export default class Controller extends JavaClass {
 
 		const getAll = this.getMethodBuilder(`getAll${plural(ent.className)}`)
 			.getMapping();
-		if (this.options.specification && this.options.sort) {
+		if (this.options.specification && this.options.sort && this.options.pageable) {
 			getAll
 				.requestParam([[`@RequestParam(name = "q", required = false)`, `Specification<${ent.className}>`, "specification"],
-				[`@RequestParam(name = "sort", required = false)`, "Sort", "sort"]])
+				[`@RequestParam(name = "sort", required = false)`, "Sort", "sort"],
+					[`@RequestParam(name = "page", required = false)`, "Pageable", "pageable"]])
+				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll(specification, pageable, sort));\n`);
+		} else if (this.options.specification && this.options.sort && !this.options.pageable) {
+			getAll
+				.requestParam([[`@RequestParam(name = "q", required = false)`, `Specification<${ent.className}>`, "specification"],
+					[`@RequestParam(name = "sort", required = false)`, "Sort", "sort"]])
 				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll(specification, sort));\n`);
-		} else if (this.options.specification) {
+		} else if (this.options.specification && !this.options.sort && this.options.pageable){
+			getAll
+				.requestParam([[`@RequestParam(name = "q", required = false)`, `Specification<${ent.className}>`, "specification"],
+					[`@RequestParam(name = "page", required = false)`, "Pageable", "pageable"]])
+				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll(specification, pageable));\n`);
+		} else if (this.options.specification && !this.options.sort && !this.options.pageable) {
 			getAll
 				.requestParam([[`@RequestParam(name = "q", required = false)`, `Specification<${ent.className}>`, "specification"]])
 				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll(specification));\n`);
-		} else {
+		} else if (!this.options.specification && !this.options.sort && this.options.pageable) {
 			getAll
-				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll());\n`);
+				.requestParam([[`@RequestParam(name = "page", required = false)`, "Pageable", "pageable"]])
+				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll(pageable));\n`);
+		} else if (!this.options.specification && this.options.sort && !this.options.pageable) {
+			getAll
+				.requestParam([[`@RequestParam(name = "sort", required = false)`, "Sort", "sort"]])
+				.implementation(`\treturn ResponseEntity.ok(${serviceVarName}.findAll(sort));\n`);
 		}
 
 		out += getAll.return(list(ent.className))

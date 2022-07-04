@@ -17,6 +17,14 @@ export default class Config extends JavaClass {
 			super.imports.push("org.springframework.data.jpa.repository.config.EnableJpaAuditing");
 			super.annotations.push("EnableJpaAuditing");
 		}
+
+		if (options && options.base) {
+			super.imports.push(`${options.domain ? options.domain + "." : ""}generic.Exclude`);
+			super.imports.push("org.springframework.context.annotation.*");
+			super.imports.push("org.springframework.data.jpa.repository.config.EnableJpaRepositories");
+			super.annotations.push(`EnableJpaRepositories(value = "${options.domain ? options.domain + "." : ""}repository",
+				excludeFilters = @ComponentScan.Filter(type = FilterType.ANNOTATION, value = Exclude.class))`)
+		}
 		this.auditable = false;
 		this._className = "Config";
 	}

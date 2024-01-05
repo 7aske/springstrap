@@ -41,7 +41,7 @@ export default class JwtProvider extends JavaClass {
 
 	public String createToken(String username, Collection<? extends GrantedAuthority> authorities) {
 		Date now = new Date();
-		Date validity = new Date(now.getTime() - VALIDITY);
+		Date validity = new Date(now.getTime() + VALIDITY);
 		return JWT.create()
 				.withSubject(username)
 				.withArrayClaim("roles", authorities.stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()).toArray(new String[]{}))
